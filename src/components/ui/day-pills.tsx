@@ -1,10 +1,8 @@
-import { Pressable, View } from "react-native";
-
-import { colors, radii, space } from "@/constants/theme";
-
-import { AppText } from "./text";
+import { Pills } from "./pills";
 
 export const DAYS = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"] as const;
+
+const OPTIONS = DAYS.map((label, i) => ({ value: String(i), label }));
 
 type DayPillsProps = {
   selected: number;
@@ -12,25 +10,5 @@ type DayPillsProps = {
 };
 
 export function DayPills({ selected, onSelect }: DayPillsProps) {
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "center", gap: space.xs }}>
-      {DAYS.map((day, i) => (
-        <Pressable
-          key={day}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: i === selected }}
-          onPress={() => onSelect?.(i)}
-          style={{
-            padding: space.xs,
-            borderRadius: radii.pill,
-            backgroundColor: i === selected ? colors.fillFaint : "transparent",
-          }}
-        >
-          <AppText variant="body" color={colors.inkSoft}>
-            {day}
-          </AppText>
-        </Pressable>
-      ))}
-    </View>
-  );
+  return <Pills options={OPTIONS} selected={String(selected)} onSelect={(v) => onSelect?.(Number(v))} wrap={false} />;
 }

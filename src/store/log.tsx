@@ -1,65 +1,95 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
 
-import type { IconName } from "@/components/ui";
+import { newId } from "@/data/ids";
+import { seedData } from "@/data/seed";
+import { loadState, saveState } from "@/data/storage";
+import type { AppData, Category, Measure, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
-export type Workout = {
-  id: string;
-  name: string;
-  icon?: IconName;
-  done: boolean;
-};
+import { reducer } from "./reducer";
 
-/** Workouts offered in the "+ Workout" sheet. */
-export const WORKOUT_CATALOG: { name: string; icon: IconName }[] = [
-  { name: "Mobility", icon: "loader" },
-  { name: "Climbing", icon: "image" },
-  { name: "Workout", icon: "link" },
-  { name: "One-Arm Pull Ups", icon: "link" },
-];
+const EMPTY: AppData = { exercises: [], templates: [], sessions: [], journal: {} };
+const SAVE_DELAY_MS = 400;
 
-type LogState = {
-  selectedDate: DateKey;
-  selectDate: (date: DateKey) => void;
-  workoutsFor: (date: DateKey) => Workout[];
-  addWorkout: (date: DateKey, workout: Omit<Workout, "id" | "done">) => void;
-  removeWorkout: (date: DateKey, id: string) => void;
-  toggleWorkout: (date: DateKey, id: string) => void;
-  journalFor: (date: DateKey) => string;
-  setJournal: (date: DateKey, text: string) => void;
-};
+function useLogState() {
+  const [data, dispatch] = useReducer(reducer, EMPTY);
+  const [hydrated, setHydrated] = useState(false);
+  const [selectedDate, selectDate] = useState(() => toKey(new Date()));
+
+  useEffect(() => {
+    loadState().then((saved) => {
+      dispatch({ type: "hydrate", data: saved ?? seedData() });
+      setHydrated(true);
+    });
+  }, []);
+
+  // Debounced save after every change (never before the saved data has loaded).
+  useEffect(() => {
+    if (!hydrated) return;
+    const id = setTimeout(() => saveState(data), SAVE_DELAY_MS);
+    return () => clearTimeout(id);
+  }, [data, hydrated]);
+
+  const templates = data.templates.filter((t) => !t.deletedAt);
+
+  return {
+    hydrated,
+    selectedDate,
+    selectDate,
+
+    // Reads
+    sessionsFor: (date: DateKey) => data.sessions.filter((s) => s.date === date),
+    session: (id: string) => data.sessions.find((s) => s.id === id),
+    templatesIn: (category: Category) => templates.filter((t) => t.category === category),
+    template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
+    journalFor: (date: DateKey) => data.journal[date] ?? "",
+
+    // Templates
+    createTemplate: (category: Category) => {
+      const id = newId();
+      dispatch({ type: "template/create", id, category });
+      return id;
+    },
+    updateTemplate: (id: string, patch: Partial<Pick<WorkoutTemplate, "name" | "category">>) =>
+      dispatch({ type: "template/update", id, patch }),
+    deleteTemplate: (id: string) => dispatch({ type: "template/delete", id }),
+    addTemplateExercise: (templateId: string) => dispatch({ type: "template/addExercise", templateId }),
+    updateTemplateExercise: (templateId: string, exerciseId: string, patch: Partial<Prescription>) =>
+      dispatch({ type: "template/updateExercise", templateId, exerciseId, patch }),
+    moveTemplateExercise: (templateId: string, exerciseId: string, by: -1 | 1) =>
+      dispatch({ type: "template/moveExercise", templateId, exerciseId, by }),
+    removeTemplateExercise: (templateId: string, exerciseId: string) =>
+      dispatch({ type: "template/removeExercise", templateId, exerciseId }),
+
+    // Sessions
+    schedule: (templateId: string, date: DateKey) => {
+      const id = newId();
+      dispatch({ type: "session/schedule", id, templateId, date });
+      return id;
+    },
+    removeSession: (id: string) => dispatch({ type: "session/remove", id }),
+    setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
+    addSessionExercise: (sessionId: string, name: string, measure: Measure) =>
+      dispatch({ type: "session/addExercise", sessionId, name, measure }),
+    removeSessionExercise: (sessionId: string, exerciseId: string) =>
+      dispatch({ type: "session/removeExercise", sessionId, exerciseId }),
+    addSet: (sessionId: string, exerciseId: string) => dispatch({ type: "set/add", sessionId, exerciseId }),
+    removeSet: (sessionId: string, exerciseId: string, setId: string) =>
+      dispatch({ type: "set/remove", sessionId, exerciseId, setId }),
+    updateSet: (sessionId: string, exerciseId: string, setId: string, change: { actual?: SetValues; done?: boolean }) =>
+      dispatch({ type: "set/update", sessionId, exerciseId, setId, ...change }),
+
+    // Journal
+    setJournal: (date: DateKey, text: string) => dispatch({ type: "journal/set", date, text }),
+  };
+}
+
+type LogState = ReturnType<typeof useLogState>;
 
 const LogContext = createContext<LogState | null>(null);
 
-const NO_WORKOUTS: Workout[] = [];
-
-// In-memory for now — swap the useState calls for persisted storage later.
 export function LogProvider({ children }: { children: ReactNode }) {
-  const [selectedDate, selectDate] = useState(() => toKey(new Date()));
-  const [workouts, setWorkouts] = useState<Record<DateKey, Workout[]>>({});
-  const [journal, setJournalEntries] = useState<Record<DateKey, string>>({});
-
-  function updateDay(date: DateKey, fn: (list: Workout[]) => Workout[]) {
-    setWorkouts((prev) => ({ ...prev, [date]: fn(prev[date] ?? []) }));
-  }
-
-  const value: LogState = {
-    selectedDate,
-    selectDate,
-    workoutsFor: (date) => workouts[date] ?? NO_WORKOUTS,
-    addWorkout: (date, workout) =>
-      updateDay(date, (list) => [
-        ...list,
-        { ...workout, id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, done: false },
-      ]),
-    removeWorkout: (date, id) => updateDay(date, (list) => list.filter((w) => w.id !== id)),
-    toggleWorkout: (date, id) =>
-      updateDay(date, (list) => list.map((w) => (w.id === id ? { ...w, done: !w.done } : w))),
-    journalFor: (date) => journal[date] ?? "",
-    setJournal: (date, text) => setJournalEntries((prev) => ({ ...prev, [date]: text })),
-  };
-
-  return <LogContext value={value}>{children}</LogContext>;
+  return <LogContext value={useLogState()}>{children}</LogContext>;
 }
 
 export function useLog() {
