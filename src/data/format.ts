@@ -7,6 +7,12 @@ export function formatSeconds(total: number) {
   return s ? `${m}:${String(s).padStart(2, "0")}` : `${m} min`;
 }
 
+/** Countdown display: "1:05", rounding partial seconds up so 0:00 means done. */
+export function formatClock(ms: number) {
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function formatWeight(kg: number) {
   return `${kg > 0 ? "+" : ""}${kg} kg`;
 }
@@ -35,11 +41,4 @@ export function formatPrescription(p: Prescription) {
   if (p.weightKg) parts.push(formatWeight(p.weightKg));
   if (p.restSeconds) parts.push(`${formatSeconds(p.restSeconds)} rest`);
   return parts.join(" · ");
-}
-
-/** Short list for a whole template, e.g. "Pull Ups, Dips +1". */
-export function formatExerciseNames(exercises: { name: string }[]) {
-  if (exercises.length === 0) return "No exercises yet";
-  const [first, second, ...rest] = exercises.map((e) => e.name);
-  return [first, second].filter(Boolean).join(", ") + (rest.length ? ` +${rest.length}` : "");
 }

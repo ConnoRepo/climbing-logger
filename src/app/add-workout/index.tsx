@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, ScrollView } from "react-native";
 
-import { AppText, Button, Icon } from "@/components/ui";
+import { AppText, Icon } from "@/components/ui";
 import { SheetRow, SquareButton } from "@/components/workout/sheet-parts";
 import { colors, space } from "@/constants/theme";
 import { CATEGORIES } from "@/data/categories";
@@ -28,7 +28,6 @@ export default function AddWorkoutCategories() {
           </SheetRow>
         </Pressable>
       ))}
-      <Button label="Done" style={{ alignSelf: "center", width: 100, marginTop: space.sm }} onPress={() => router.dismiss()} />
     </ScrollView>
   );
 }

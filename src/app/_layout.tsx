@@ -57,6 +57,7 @@ function AppStack({ fontsReady }: { fontsReady: boolean }) {
       <Stack.Screen name="add-workout" options={sheet} />
       <Stack.Screen name="template/[id]" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ title: "" }} />
+      <Stack.Screen name="timer/[id]" options={{ title: "", animation: "slide_from_right" }} />
     </Stack>
   );
 }

@@ -42,7 +42,7 @@ export default function Landing() {
               icon={categoryInfo(s.category).icon}
               done={s.status === "done"}
               onToggle={(done) => setSessionDone(s.id, done)}
-              onIconPress={() => router.push({ pathname: "/session/[id]", params: { id: s.id } })}
+              onOpen={() => router.push({ pathname: "/session/[id]", params: { id: s.id } })}
               onRemove={() => removeSession(s.id)}
             />
           ))

@@ -1,33 +1,31 @@
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
-import { AppText, Box, Button, Checkbox, Stepper, SwipeToDelete } from "@/components/ui";
+import { AppText, Box, Button, Checkbox, SwipeToDelete } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
 import { MEASURES, fieldLabel } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { SessionExercise, SetValues } from "@/data/types";
+
+import { SetSteppers } from "./set-steppers";
 
 type SessionExerciseCardProps = {
   exercise: SessionExercise;
   onUpdateSet: (setId: string, change: { actual?: SetValues; done?: boolean }) => void;
   onAddSet: () => void;
   onRemoveSet: (setId: string) => void;
-  onRemove: () => void;
 };
 
 const SET_COL = 36;
 
-/** Logs what was actually done for one exercise, set by set. */
-export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveSet, onRemove }: SessionExerciseCardProps) {
+/** Logs what was actually done, set by set. */
+export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveSet }: SessionExerciseCardProps) {
   const fields = MEASURES[exercise.prescription.measure].setFields;
 
   return (
     <Box style={{ padding: space.sm, gap: space.sm }}>
-      <View>
-        <AppText variant="row">{exercise.name || "Untitled exercise"}</AppText>
-        <AppText variant="note" color={colors.placeholder}>
-          Planned: {formatPrescription(exercise.prescription)}
-        </AppText>
-      </View>
+      <AppText variant="note" color={colors.placeholder}>
+        Planned: {formatPrescription(exercise.prescription)}
+      </AppText>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         <AppText variant="note" style={{ width: SET_COL }}>
@@ -46,30 +44,14 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
             <AppText variant="label" style={{ width: SET_COL }}>
               {set.position + 1}
             </AppText>
-            {fields.map((f) => (
-              <Stepper
-                key={f.key}
-                label={`Set ${set.position + 1} ${f.unit}`}
-                value={set.actual[f.key as keyof SetValues]}
-                step={f.step}
-                min={f.key === "weightKg" ? f.min : 0}
-                onChange={(v) => onUpdateSet(set.id, { actual: { [f.key]: v } })}
-              />
-            ))}
+            <SetSteppers set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
             <View style={{ flex: 1 }} />
             <Checkbox checked={set.done} onChange={(done) => onUpdateSet(set.id, { done })} label={`Set ${set.position + 1} done`} />
           </View>
         </SwipeToDelete>
       ))}
 
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Button label="+ Add set" style={{ width: 100 }} onPress={onAddSet} />
-        <Pressable accessibilityRole="button" onPress={onRemove} hitSlop={8}>
-          <AppText variant="note" color={colors.placeholder}>
-            Remove exercise
-          </AppText>
-        </Pressable>
-      </View>
+      <Button label="+ Add set" style={{ width: 100 }} onPress={onAddSet} />
     </Box>
   );
 }

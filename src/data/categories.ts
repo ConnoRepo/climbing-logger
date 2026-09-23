@@ -2,14 +2,19 @@ import type { IconName } from "@/components/ui";
 
 import type { Category, Measure, Prescription, SetValues } from "./types";
 
-export const CATEGORIES: { id: Category; label: string; icon: IconName; defaultMeasure: Measure }[] = [
-  { id: "mobility", label: "Mobility", icon: "loader", defaultMeasure: "time" },
-  { id: "climbing", label: "Climbing", icon: "image", defaultMeasure: "climbs" },
-  { id: "workout", label: "Workout", icon: "link", defaultMeasure: "reps" },
+/** `measures` are the options offered for a workout in that category; the first is the default. */
+export const CATEGORIES: { id: Category; label: string; icon: IconName; measures: Measure[] }[] = [
+  { id: "mobility", label: "Mobility", icon: "loader", measures: ["time", "reps"] },
+  { id: "climbing", label: "Climbing", icon: "image", measures: ["climbs", "intervals", "time"] },
+  { id: "workout", label: "Workout", icon: "link", measures: ["reps", "time"] },
 ];
 
 export function categoryInfo(id: Category) {
   return CATEGORIES.find((c) => c.id === id)!;
+}
+
+export function defaultMeasure(category: Category) {
+  return categoryInfo(category).measures[0];
 }
 
 export function isCategory(value: unknown): value is Category {

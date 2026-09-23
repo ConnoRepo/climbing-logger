@@ -6,13 +6,15 @@ import { AppText, Button, Icon } from "@/components/ui";
 import { SheetBack, SheetRow, SquareButton } from "@/components/workout/sheet-parts";
 import { colors, space } from "@/constants/theme";
 import { categoryInfo, isCategory } from "@/data/categories";
-import { formatExerciseNames, formatPrescription } from "@/data/format";
+import { formatPrescription } from "@/data/format";
+import { templateExercise } from "@/data/templates";
 import type { WorkoutTemplate } from "@/data/types";
 import { formatDayHeader } from "@/lib/dates";
 import { useLog } from "@/store/log";
 
 function summary(t: WorkoutTemplate) {
-  return t.exercises.length === 1 ? formatPrescription(t.exercises[0]) : formatExerciseNames(t.exercises);
+  const exercise = templateExercise(t);
+  return exercise ? formatPrescription(exercise) : "";
 }
 
 export default function CategoryTemplates() {
@@ -46,19 +48,18 @@ export default function CategoryTemplates() {
             accessibilityRole="button"
             accessibilityLabel={`Edit ${t.name}`}
             onPress={() => openTemplate(t.id)}
-            hitSlop={8}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+            style={({ pressed }) => ({ flex: 1, flexDirection: "row", alignItems: "center", gap: 10, opacity: pressed ? 0.5 : 1 })}
           >
             <Icon name={info.icon} size={48} />
+            <View style={{ flex: 1 }}>
+              <AppText variant="row" numberOfLines={2}>
+                {t.name}
+              </AppText>
+              <AppText variant="note" color={colors.placeholder} numberOfLines={2}>
+                {added[t.id] ? `Added to ${formatDayHeader(selectedDate)}` : summary(t)}
+              </AppText>
+            </View>
           </Pressable>
-          <View style={{ flex: 1 }}>
-            <AppText variant="row" numberOfLines={2}>
-              {t.name}
-            </AppText>
-            <AppText variant="note" color={colors.placeholder} numberOfLines={2}>
-              {added[t.id] ? `Added to ${formatDayHeader(selectedDate)}` : summary(t)}
-            </AppText>
-          </View>
           <SquareButton symbol="+" label={`Add ${t.name}`} onPress={() => add(t)} />
         </SheetRow>
       ))}

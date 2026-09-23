@@ -7,6 +7,9 @@ import { useEffect, useRef, useState } from "react";
 export function useCountdown(initialSeconds: number, onDone?: () => void) {
   const [remainingMs, setRemainingMs] = useState(initialSeconds * 1000);
   const [isRunning, setIsRunning] = useState(false);
+  // Bumped by restart() so a new interval starts even if isRunning never flips
+  // (e.g. onDone immediately restarting the next countdown).
+  const [run, setRun] = useState(0);
   const endAtRef = useRef(0);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
@@ -24,7 +27,7 @@ export function useCountdown(initialSeconds: number, onDone?: () => void) {
       }
     }, 100);
     return () => clearInterval(id);
-  }, [isRunning]);
+  }, [isRunning, run]);
 
   function start() {
     if (remainingMs <= 0) return;
@@ -36,6 +39,15 @@ export function useCountdown(initialSeconds: number, onDone?: () => void) {
     // Capture the exact remaining time, not the last tick's value
     setRemainingMs(Math.max(0, endAtRef.current - Date.now()));
     setIsRunning(false);
+  }
+
+  /** Starts a fresh countdown of `seconds`; 0 just stops at 0. */
+  function restart(seconds: number) {
+    const ms = seconds * 1000;
+    endAtRef.current = Date.now() + ms;
+    setRemainingMs(ms);
+    setIsRunning(ms > 0);
+    setRun((n) => n + 1);
   }
 
   function reset() {
@@ -50,5 +62,6 @@ export function useCountdown(initialSeconds: number, onDone?: () => void) {
     start,
     pause,
     reset,
+    restart,
   };
 }

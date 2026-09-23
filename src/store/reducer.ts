@@ -1,6 +1,7 @@
-import { MEASURES, categoryInfo } from "@/data/categories";
+import { MEASURES, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
-import { instantiate, makeSessionExercise, makeSets } from "@/data/schedule";
+import { instantiate, makeSets } from "@/data/schedule";
+import { newPrescription } from "@/data/templates";
 import type {
   AppData,
   Category,
@@ -20,16 +21,11 @@ export type Action =
   | { type: "template/create"; id: string; category: Category }
   | { type: "template/update"; id: string; patch: Partial<Pick<WorkoutTemplate, "name" | "category">> }
   | { type: "template/delete"; id: string }
-  | { type: "template/addExercise"; templateId: string; name?: string }
   | { type: "template/updateExercise"; templateId: string; exerciseId: string; patch: Partial<Prescription> }
-  | { type: "template/moveExercise"; templateId: string; exerciseId: string; by: -1 | 1 }
-  | { type: "template/removeExercise"; templateId: string; exerciseId: string }
   // Sessions
   | { type: "session/schedule"; id: string; templateId: string; date: DateKey }
   | { type: "session/remove"; id: string }
   | { type: "session/setDone"; id: string; done: boolean }
-  | { type: "session/addExercise"; sessionId: string; name: string; measure: Measure }
-  | { type: "session/removeExercise"; sessionId: string; exerciseId: string }
   | { type: "set/add"; sessionId: string; exerciseId: string }
   | { type: "set/remove"; sessionId: string; exerciseId: string; setId: string }
   | { type: "set/update"; sessionId: string; exerciseId: string; setId: string; actual?: SetValues; done?: boolean }
@@ -65,18 +61,6 @@ function ensureExercise(state: AppData, name: string, category: Category, measur
   return [{ ...state, exercises: [...state.exercises, exercise] }, exercise];
 }
 
-function newPrescription(exercise: Exercise | null, measure: Measure, position: number): Prescription {
-  return {
-    sets: 1,
-    ...MEASURES[measure].defaults,
-    id: newId(),
-    position,
-    exerciseId: exercise?.id ?? null,
-    name: exercise?.name ?? "",
-    measure,
-  };
-}
-
 export function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
     case "hydrate":
@@ -84,11 +68,13 @@ export function reducer(state: AppData, action: Action): AppData {
 
     case "template/create": {
       const ts = now();
+      const name = `New ${categoryInfo(action.category).label}`;
       const template: WorkoutTemplate = {
         id: action.id,
         category: action.category,
-        name: `New ${categoryInfo(action.category).label}`,
-        exercises: [],
+        name,
+        // Each workout is exactly one exercise.
+        exercises: [newPrescription(defaultMeasure(action.category), { name })],
         createdAt: ts,
         updatedAt: ts,
       };
@@ -96,23 +82,16 @@ export function reducer(state: AppData, action: Action): AppData {
     }
 
     case "template/update":
-      return mapTemplate(state, action.id, (t) => ({ ...t, ...action.patch }));
+      return mapTemplate(state, action.id, (t) => ({
+        ...t,
+        ...action.patch,
+        // The workout name is also its exercise's name (linked to the library on commit).
+        exercises:
+          action.patch.name !== undefined ? t.exercises.map((e) => ({ ...e, name: action.patch.name! })) : t.exercises,
+      }));
 
     case "template/delete":
       return mapTemplate(state, action.id, (t) => ({ ...t, deletedAt: now() }));
-
-    case "template/addExercise": {
-      const template = state.templates.find((t) => t.id === action.templateId);
-      if (!template) return state;
-      const measure = categoryInfo(template.category).defaultMeasure;
-      const [next, exercise] = action.name?.trim()
-        ? ensureExercise(state, action.name, template.category, measure)
-        : [state, null];
-      return mapTemplate(next, template.id, (t) => ({
-        ...t,
-        exercises: [...t.exercises, newPrescription(exercise, measure, t.exercises.length)],
-      }));
-    }
 
     case "template/updateExercise": {
       const template = state.templates.find((t) => t.id === action.templateId);
@@ -140,22 +119,6 @@ export function reducer(state: AppData, action: Action): AppData {
       }));
     }
 
-    case "template/moveExercise":
-      return mapTemplate(state, action.templateId, (t) => {
-        const from = t.exercises.findIndex((e) => e.id === action.exerciseId);
-        const to = from + action.by;
-        if (from < 0 || to < 0 || to >= t.exercises.length) return t;
-        const list = [...t.exercises];
-        [list[from], list[to]] = [list[to], list[from]];
-        return { ...t, exercises: reposition(list) };
-      });
-
-    case "template/removeExercise":
-      return mapTemplate(state, action.templateId, (t) => ({
-        ...t,
-        exercises: reposition(t.exercises.filter((e) => e.id !== action.exerciseId)),
-      }));
-
     case "session/schedule": {
       const template = state.templates.find((t) => t.id === action.templateId);
       if (!template) return state;
@@ -170,25 +133,6 @@ export function reducer(state: AppData, action: Action): AppData {
         ...s,
         status: action.done ? "done" : "planned",
         completedAt: action.done ? now() : undefined,
-      }));
-
-    case "session/addExercise": {
-      const session = state.sessions.find((s) => s.id === action.sessionId);
-      if (!session) return state;
-      const [next, exercise] = ensureExercise(state, action.name, session.category, action.measure);
-      return mapSession(next, session.id, (s) => ({
-        ...s,
-        exercises: [
-          ...s.exercises,
-          makeSessionExercise(newPrescription(exercise, action.measure, s.exercises.length), s.exercises.length),
-        ],
-      }));
-    }
-
-    case "session/removeExercise":
-      return mapSession(state, action.sessionId, (s) => ({
-        ...s,
-        exercises: reposition(s.exercises.filter((e) => e.id !== action.exerciseId)),
       }));
 
     case "set/add":

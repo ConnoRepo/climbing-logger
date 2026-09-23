@@ -1,5 +1,6 @@
 import { newId, now } from "./ids";
-import type { AppData, Exercise, WorkoutTemplate } from "./types";
+import { newPrescription } from "./templates";
+import type { AppData, Exercise, Prescription, WorkoutTemplate } from "./types";
 
 /** Starter templates. Placeholders to edit, not training advice. */
 export function seedData(): AppData {
@@ -13,34 +14,27 @@ export function seedData(): AppData {
     updatedAt: ts,
   };
 
-  const template = (category: WorkoutTemplate["category"], name: string): WorkoutTemplate => ({
+  const template = (category: WorkoutTemplate["category"], name: string, exercise: Prescription): WorkoutTemplate => ({
     id: newId(),
     category,
     name,
-    exercises: [],
+    exercises: [exercise],
     createdAt: ts,
     updatedAt: ts,
-  });
-
-  const strength = template("workout", "Strength Pull-Ups");
-  strength.exercises.push({
-    id: newId(),
-    position: 0,
-    exerciseId: pullUps.id,
-    name: pullUps.name,
-    measure: "reps",
-    sets: 4,
-    reps: 6,
-    restSeconds: 120,
   });
 
   return {
     exercises: [pullUps],
     templates: [
-      template("climbing", "Volume Session"),
-      template("climbing", "Max Session"),
-      strength,
-      template("mobility", "Daily Mobility"),
+      template("climbing", "Volume Session", newPrescription("climbs", { name: "Volume Session" })),
+      template("climbing", "Max Session", newPrescription("climbs", { name: "Max Session" })),
+      template("workout", "Strength Pull-Ups", {
+        ...newPrescription("reps", { name: pullUps.name, exerciseId: pullUps.id }),
+        sets: 4,
+        reps: 6,
+        restSeconds: 120,
+      }),
+      template("mobility", "Daily Mobility", newPrescription("time", { name: "Daily Mobility" })),
     ],
     sessions: [],
     journal: {},

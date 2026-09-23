@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useReducer, useState, type ReactN
 import { newId } from "@/data/ids";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
-import type { AppData, Category, Measure, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
+import type { AppData, Category, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
@@ -53,13 +53,8 @@ function useLogState() {
     updateTemplate: (id: string, patch: Partial<Pick<WorkoutTemplate, "name" | "category">>) =>
       dispatch({ type: "template/update", id, patch }),
     deleteTemplate: (id: string) => dispatch({ type: "template/delete", id }),
-    addTemplateExercise: (templateId: string) => dispatch({ type: "template/addExercise", templateId }),
     updateTemplateExercise: (templateId: string, exerciseId: string, patch: Partial<Prescription>) =>
       dispatch({ type: "template/updateExercise", templateId, exerciseId, patch }),
-    moveTemplateExercise: (templateId: string, exerciseId: string, by: -1 | 1) =>
-      dispatch({ type: "template/moveExercise", templateId, exerciseId, by }),
-    removeTemplateExercise: (templateId: string, exerciseId: string) =>
-      dispatch({ type: "template/removeExercise", templateId, exerciseId }),
 
     // Sessions
     schedule: (templateId: string, date: DateKey) => {
@@ -69,10 +64,6 @@ function useLogState() {
     },
     removeSession: (id: string) => dispatch({ type: "session/remove", id }),
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
-    addSessionExercise: (sessionId: string, name: string, measure: Measure) =>
-      dispatch({ type: "session/addExercise", sessionId, name, measure }),
-    removeSessionExercise: (sessionId: string, exerciseId: string) =>
-      dispatch({ type: "session/removeExercise", sessionId, exerciseId }),
     addSet: (sessionId: string, exerciseId: string) => dispatch({ type: "set/add", sessionId, exerciseId }),
     removeSet: (sessionId: string, exerciseId: string, setId: string) =>
       dispatch({ type: "set/remove", sessionId, exerciseId, setId }),
