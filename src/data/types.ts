@@ -21,7 +21,7 @@ export type Exercise = Timestamps & {
 };
 
 /**
- * One line of a template: "Pull Ups — 4 × 6 reps @ +10 kg, 2:00 rest".
+ * One line of a template: "Pull Ups — 4 × 6 reps @ +25 lb, 2:00 rest".
  * Fields are flat and optional; `measure` decides which ones apply (see MEASURES).
  */
 export type Prescription = {
@@ -40,7 +40,7 @@ export type Prescription = {
   offSeconds?: number;
   perSide?: boolean;
   /** + added / – assisted */
-  weightKg?: number;
+  weightLb?: number;
   edgeMm?: number;
   /** Stored as entered ("V4", "V2–V4") — never converted between scales. */
   grade?: string;
@@ -61,7 +61,7 @@ export type WorkoutTemplate = Timestamps & {
 export type SetValues = {
   reps?: number;
   seconds?: number;
-  weightKg?: number;
+  weightLb?: number;
 };
 
 export type SetLog = {

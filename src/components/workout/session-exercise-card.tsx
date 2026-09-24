@@ -1,12 +1,12 @@
 import { View } from "react-native";
 
-import { AppText, Box, Button, Checkbox } from "@/components/ui";
+import { AppText, Box, Button } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
-import { MAX_SETS, MEASURES, fieldLabel } from "@/data/categories";
+import { MAX_SETS, MEASURES } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { SessionExercise, SetValues } from "@/data/types";
 
-import { SetSteppers } from "./set-steppers";
+import { SetHeader, SetRow } from "./set-row";
 
 type SessionExerciseCardProps = {
   exercise: SessionExercise;
@@ -14,8 +14,6 @@ type SessionExerciseCardProps = {
   onAddSet: () => void;
   onRemoveSet: (setId: string) => void;
 };
-
-const SET_COL = 36;
 
 /** Logs what was actually done, set by set. */
 export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveSet }: SessionExerciseCardProps) {
@@ -30,40 +28,26 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
         Planned: {formatPrescription(exercise.prescription)}
       </AppText>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-        <AppText variant="note" style={{ width: SET_COL }}>
-          Set
-        </AppText>
-        {fields.map((f) => (
-          <AppText key={f.key} variant="note" style={{ width: 104 }}>
-            {fieldLabel(f)}
-          </AppText>
-        ))}
-      </View>
+      <SetHeader fields={fields} />
 
       {exercise.sets.map((set) => (
-        <View key={set.id} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 2 }}>
-          <AppText variant="label" style={{ width: SET_COL }}>
-            {set.position + 1}
-          </AppText>
-          <SetSteppers set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
-          <View style={{ flex: 1 }} />
-          <Checkbox checked={set.done} onChange={(done) => onUpdateSet(set.id, { done })} label={`Set ${set.position + 1} done`} />
-        </View>
+        <SetRow key={set.id} set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
       ))}
 
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+      {/* 15% more room above the buttons than between the other rows. */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm * 0.15 }}>
         <Button
-          label="− Remove set"
+          label="− Set"
           accessibilityLabel="Remove last set"
           disabled={!canRemove}
-          style={{ width: 120, opacity: canRemove ? 1 : 0.35 }}
+          style={{ width: 72, opacity: canRemove ? 1 : 0.35 }}
           onPress={() => last && onRemoveSet(last.id)}
         />
         <Button
-          label="+ Add set"
+          label="+ Set"
+          accessibilityLabel="Add a set"
           disabled={!canAdd}
-          style={{ width: 100, opacity: canAdd ? 1 : 0.35 }}
+          style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
           onPress={onAddSet}
         />
       </View>

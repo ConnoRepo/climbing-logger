@@ -25,7 +25,7 @@ export function isCategory(value: unknown): value is Category {
 export const MAX_SETS = 15;
 
 /** Numeric prescription fields that can be edited with a stepper. */
-export type NumericField = "reps" | "seconds" | "offSeconds" | "weightKg" | "edgeMm" | "restSeconds";
+export type NumericField = "reps" | "seconds" | "offSeconds" | "weightLb" | "edgeMm" | "restSeconds";
 
 export type FieldSpec = { key: NumericField; label: string; unit: string; step: number; min: number };
 
@@ -36,7 +36,7 @@ const F = {
   hold: { key: "seconds", label: "Time", unit: "s", step: 5, min: 5 },
   on: { key: "seconds", label: "On", unit: "s", step: 1, min: 1 },
   off: { key: "offSeconds", label: "Off", unit: "s", step: 1, min: 1 },
-  weight: { key: "weightKg", label: "Weight", unit: "kg", step: 2.5, min: -100 },
+  weight: { key: "weightLb", label: "Weight", unit: "lb", step: 5, min: -225 },
   edge: { key: "edgeMm", label: "Edge", unit: "mm", step: 1, min: 4 },
   rest: { key: "restSeconds", label: "Rest", unit: "s", step: 15, min: 0 },
 } satisfies Record<string, FieldSpec>;
@@ -87,7 +87,7 @@ export const MEASURES: Record<
   },
 };
 
-/** "Weight (kg)", but just "Reps" when the unit would repeat the label. */
+/** "Weight (lb)", but just "Reps" when the unit would repeat the label. */
 export function fieldLabel(f: FieldSpec) {
   return f.unit.toLowerCase() === f.label.toLowerCase() ? f.label : `${f.label} (${f.unit})`;
 }
@@ -97,7 +97,7 @@ export function plannedSetValues(p: Prescription): SetValues {
   const values: SetValues = {};
   for (const f of MEASURES[p.measure].setFields) {
     const v = p[f.key];
-    if (v !== undefined && (f.key === "reps" || f.key === "seconds" || f.key === "weightKg")) values[f.key] = v;
+    if (v !== undefined && (f.key === "reps" || f.key === "seconds" || f.key === "weightLb")) values[f.key] = v;
   }
   return values;
 }

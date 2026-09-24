@@ -13,11 +13,11 @@ export function formatClock(ms: number) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
-export function formatWeight(kg: number) {
-  return `${kg > 0 ? "+" : ""}${kg} kg`;
+export function formatWeight(lb: number) {
+  return `${lb > 0 ? "+" : ""}${lb} lb`;
 }
 
-/** One-line summary, e.g. "4 × 6 reps · +10 kg" or "3 sets · 6 × 7s on / 3s off · 20 mm". */
+/** One-line summary, e.g. "4 × 6 reps · +25 lb" or "3 sets · 6 × 7s on / 3s off · 20 mm". */
 export function formatPrescription(p: Prescription) {
   const side = p.perSide ? " / side" : "";
   const parts: string[] = [];
@@ -38,7 +38,7 @@ export function formatPrescription(p: Prescription) {
       if (p.grade) parts.push(p.grade);
       break;
   }
-  if (p.weightKg) parts.push(formatWeight(p.weightKg));
+  if (p.weightLb) parts.push(formatWeight(p.weightLb));
   if (p.restSeconds) parts.push(`${formatSeconds(p.restSeconds)} rest`);
   return parts.join(" · ");
 }

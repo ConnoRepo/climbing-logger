@@ -2,7 +2,7 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Button } from "@/components/ui";
+import { AppText, Box, Button, Stepper } from "@/components/ui";
 import { SessionExerciseCard } from "@/components/workout/session-exercise-card";
 import { borders, colors, space } from "@/constants/theme";
 import { formatShortDate } from "@/lib/dates";
@@ -25,6 +25,8 @@ export default function SessionScreen() {
   }
 
   const template = session.templateId ? log.template(session.templateId) : undefined;
+  // The timer runs the first exercise, so that's whose rest is edited here.
+  const timed = session.exercises[0];
   const sets = session.exercises.flatMap((e) => e.sets);
   const started = sets.some((s) => s.done) && !sets.every((s) => s.done);
 
@@ -63,9 +65,34 @@ export default function SessionScreen() {
             onRemoveSet={(setId) => log.removeSet(session.id, e.id, setId)}
           />
         ))}
+
+        {timed && (
+          <Box
+            style={{
+              width: "90%",
+              alignSelf: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: space.xs,
+              paddingHorizontal: space.sm,
+            }}
+          >
+            <AppText variant="button" numberOfLines={1} style={{ flexShrink: 1 }}>
+              Rest between sets (s)
+            </AppText>
+            <Stepper
+              label="rest between sets in seconds"
+              value={timed.prescription.restSeconds}
+              step={10}
+              min={0}
+              onChange={(v) => log.setRest(session.id, timed.id, v)}
+            />
+          </Box>
+        )}
       </ScrollView>
 
-      {/* The lower third of the whole screen; the button sits centered in it at half size. */}
+      {/* The bottom quarter of the screen; the Start button sits centered in it. */}
       <View
         style={{
           height: height / 4,

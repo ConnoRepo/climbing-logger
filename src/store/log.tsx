@@ -64,6 +64,8 @@ function useLogState() {
     },
     removeSession: (id: string) => dispatch({ type: "session/remove", id }),
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
+    setRest: (sessionId: string, exerciseId: string, restSeconds: number) =>
+      dispatch({ type: "session/setRest", sessionId, exerciseId, restSeconds }),
     addSet: (sessionId: string, exerciseId: string) => dispatch({ type: "set/add", sessionId, exerciseId }),
     removeSet: (sessionId: string, exerciseId: string, setId: string) =>
       dispatch({ type: "set/remove", sessionId, exerciseId, setId }),

@@ -26,6 +26,7 @@ export type Action =
   | { type: "session/schedule"; id: string; templateId: string; date: DateKey }
   | { type: "session/remove"; id: string }
   | { type: "session/setDone"; id: string; done: boolean }
+  | { type: "session/setRest"; sessionId: string; exerciseId: string; restSeconds: number }
   | { type: "set/add"; sessionId: string; exerciseId: string }
   | { type: "set/remove"; sessionId: string; exerciseId: string; setId: string }
   | { type: "set/update"; sessionId: string; exerciseId: string; setId: string; actual?: SetValues; done?: boolean }
@@ -135,6 +136,14 @@ export function reducer(state: AppData, action: Action): AppData {
         completedAt: action.done ? now() : undefined,
       }));
 
+    case "session/setRest":
+      return mapSession(state, action.sessionId, (s) =>
+        mapSessionExercise(s, action.exerciseId, (e) => ({
+          ...e,
+          prescription: { ...e.prescription, restSeconds: action.restSeconds },
+        })),
+      );
+
     case "set/add":
       return mapSession(state, action.sessionId, (s) =>
         mapSessionExercise(s, action.exerciseId, (e) => {
@@ -156,18 +165,29 @@ export function reducer(state: AppData, action: Action): AppData {
 
     case "set/update":
       return mapSession(state, action.sessionId, (s) =>
-        mapSessionExercise(s, action.exerciseId, (e) => ({
-          ...e,
-          sets: e.sets.map((set) =>
-            set.id === action.setId
-              ? {
+        mapSessionExercise(s, action.exerciseId, (e) => {
+          const target = e.sets.find((set) => set.id === action.setId);
+          if (!target) return e;
+          // A new weight carries forward to every later set (and so to sets added later,
+          // which copy the last one); earlier sets keep what they were.
+          const weightLb = action.actual?.weightLb;
+          return {
+            ...e,
+            sets: e.sets.map((set) => {
+              if (set.id === action.setId) {
+                return {
                   ...set,
                   actual: action.actual ? { ...set.actual, ...action.actual } : set.actual,
                   done: action.done ?? set.done,
-                }
-              : set,
-          ),
-        })),
+                };
+              }
+              if (weightLb !== undefined && set.position > target.position) {
+                return { ...set, actual: { ...set.actual, weightLb } };
+              }
+              return set;
+            }),
+          };
+        }),
       );
 
     case "journal/set":

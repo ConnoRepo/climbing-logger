@@ -71,23 +71,14 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
     if (row) goTo(steps.findIndex((s) => s.key === row.stepKeys[0]));
   }
 
-  function jumpTo(rowKey: string) {
-    const row = rows.find((r) => r.key === rowKey);
-    if (row) goTo(steps.findIndex((s) => s.key === row.stepKeys[0]));
-  }
-
   return {
-    steps,
-    rows,
     current,
-    rowIndex,
     isLast: index === steps.length - 1,
     isTimed: current?.seconds !== undefined,
     remainingMs: countdown.remainingMs,
     isRunning: countdown.isRunning,
     next,
     prev,
-    jumpTo,
     togglePause: countdown.isRunning ? countdown.pause : countdown.start,
   };
 }

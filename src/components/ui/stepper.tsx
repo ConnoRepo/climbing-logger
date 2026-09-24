@@ -13,16 +13,23 @@ type StepperProps = {
   max?: number;
   /** Used for accessibility labels, e.g. "reps". */
   label: string;
+  /** large: the timer's current set. */
+  size?: "regular" | "large";
 };
 
-const BUTTON = 30;
+/** Button side and value width; a regular stepper is 104 wide, a large one 112. */
+const SIZES = {
+  regular: { button: 30, input: 44, text: type.button },
+  large: { button: 32, input: 48, text: type.label },
+} as const;
 
 function round(n: number) {
   return Math.round(n * 100) / 100;
 }
 
 /** Outlined − value + control; the value can also be typed. */
-export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label }: StepperProps) {
+export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label, size = "regular" }: StepperProps) {
+  const s = SIZES[size];
   const current = value ?? 0;
   const [text, setText] = useState(String(current));
 
@@ -39,7 +46,7 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label 
 
   return (
     <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <StepButton symbol="−" label={`Decrease ${label}`} onPress={() => set(current - step)} />
+      <StepButton symbol="−" label={`Decrease ${label}`} side={s.button} onPress={() => set(current - step)} />
       <TextInput
         accessibilityLabel={label}
         value={text}
@@ -49,25 +56,26 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label 
         keyboardType="decimal-pad"
         selectTextOnFocus
         style={[
-          type.button,
+          s.text,
           {
-            width: 44,
-            height: BUTTON,
+            width: s.input,
+            height: s.button,
             padding: 0,
             textAlign: "center",
             color: colors.ink,
+            backgroundColor: colors.paper,
             borderTopWidth: borders.thin,
             borderBottomWidth: borders.thin,
             borderColor: colors.ink,
           },
         ]}
       />
-      <StepButton symbol="+" label={`Increase ${label}`} onPress={() => set(current + step)} />
+      <StepButton symbol="+" label={`Increase ${label}`} side={s.button} onPress={() => set(current + step)} />
     </View>
   );
 }
 
-function StepButton({ symbol, label, onPress }: { symbol: string; label: string; onPress: () => void }) {
+function StepButton({ symbol, label, side, onPress }: { symbol: string; label: string; side: number; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -75,8 +83,8 @@ function StepButton({ symbol, label, onPress }: { symbol: string; label: string;
       onPress={onPress}
       hitSlop={4}
       style={({ pressed }) => ({
-        width: BUTTON,
-        height: BUTTON,
+        width: side,
+        height: side,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: borders.thin,
