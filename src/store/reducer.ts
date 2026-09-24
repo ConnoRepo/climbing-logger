@@ -1,4 +1,4 @@
-import { MEASURES, categoryInfo, defaultMeasure } from "@/data/categories";
+import { MAX_SETS, MEASURES, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
 import { instantiate, makeSets } from "@/data/schedule";
 import { newPrescription } from "@/data/templates";
@@ -138,6 +138,7 @@ export function reducer(state: AppData, action: Action): AppData {
     case "set/add":
       return mapSession(state, action.sessionId, (s) =>
         mapSessionExercise(s, action.exerciseId, (e) => {
+          if (e.sets.length >= MAX_SETS) return e;
           // An extra set has no plan; it starts from what the last set actually was.
           const last = e.sets.at(-1);
           const actual = last ? { ...last.actual } : makeSets(e.prescription, 1)[0].actual;

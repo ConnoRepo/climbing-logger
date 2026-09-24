@@ -38,6 +38,11 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
     countdown.restart(current?.seconds ?? 0);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // The current set was deleted: settle on the step that took its place and start it fresh.
+  useEffect(() => {
+    if (found < 0 && current) goTo(index);
+  }, [found, current?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function goTo(i: number) {
     const step = steps[i];
     if (!step) return;

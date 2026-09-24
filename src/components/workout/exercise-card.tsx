@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { AppText, Box, Checkbox, Pills, Stepper, TextField } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
-import { MEASURES, fieldLabel, type FieldSpec } from "@/data/categories";
+import { MAX_SETS, MEASURES, fieldLabel, type FieldSpec } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { Measure, Prescription } from "@/data/types";
 
@@ -29,7 +29,7 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
       )}
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", columnGap: space.md, rowGap: space.sm }}>
-        <Field label="Sets" value={p.sets} step={1} min={1} onChange={(sets) => onChange({ sets })} />
+        <Field label="Sets" value={p.sets} step={1} min={1} max={MAX_SETS} onChange={(sets) => onChange({ sets })} />
         {spec.fields.map((f: FieldSpec) => (
           <Field
             key={f.key}
@@ -76,6 +76,7 @@ function Field({
   value: number | undefined;
   step: number;
   min: number;
+  max?: number;
   onChange: (v: number) => void;
 }) {
   return (

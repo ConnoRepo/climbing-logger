@@ -21,6 +21,9 @@ export function isCategory(value: unknown): value is Category {
   return CATEGORIES.some((c) => c.id === value);
 }
 
+/** Most sets a workout can have, planned or logged. */
+export const MAX_SETS = 15;
+
 /** Numeric prescription fields that can be edited with a stepper. */
 export type NumericField = "reps" | "seconds" | "offSeconds" | "weightKg" | "edgeMm" | "restSeconds";
 

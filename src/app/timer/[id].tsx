@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppText, Box, Button, Checkbox } from "@/components/ui";
 import { SetSteppers } from "@/components/workout/set-steppers";
 import { colors, space } from "@/constants/theme";
-import { MEASURES, fieldLabel, type FieldSpec } from "@/data/categories";
+import { fieldLabel, MAX_SETS, MEASURES, type FieldSpec } from "@/data/categories";
 import { formatClock, formatSeconds, formatWeight } from "@/data/format";
 import type { TimerStep } from "@/data/timer-steps";
 import type { Session, SessionExercise, SetLog, SetValues } from "@/data/types";
@@ -39,13 +39,14 @@ function WorkoutTimer({ session, exercise }: { session: Session; exercise: Sessi
   // On a rest this is the set just finished, so "how many did I really get" can be logged.
   const set = exercise.sets.find((s) => s.id === current?.setId);
   const last = exercise.sets.at(-1);
+  const canAdd = exercise.sets.length < MAX_SETS;
   const canRemoveLast = !!last && exercise.sets.length > 1 && !last.done && last.id !== current?.setId;
 
   return (
     <View style={{ flex: 1, paddingHorizontal: 15, paddingBottom: Math.max(bottom, space.md), gap: space.md }}>
       <Stack.Screen options={{ title: session.name }} />
 
-      <Box border="none" fill="fill" style={{ height: 169, alignItems: "center", justifyContent: "center" }}>
+      <Box border="none" fill={current && !timer.isTimed ? "go" : "fill"} style={{ height: 169, alignItems: "center", justifyContent: "center" }}>
         <AppText variant="display" style={{ fontVariant: ["tabular-nums"] }}>
           {!current ? "—" : timer.isTimed ? formatClock(timer.remainingMs) : "GO"}
         </AppText>
@@ -66,22 +67,21 @@ function WorkoutTimer({ session, exercise }: { session: Session; exercise: Sessi
       {set && (
         <View style={{ gap: space.xs }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Button
+              label="− Set"
+              style={{ width: 64, opacity: canRemoveLast ? 1 : 0.35 }}
+              disabled={!canRemoveLast}
+              accessibilityLabel="Remove last set"
+              onPress={() => last && log.removeSet(session.id, exercise.id, last.id)}
+            />
             <AppText variant="label">Set {set.position + 1}</AppText>
-            <View style={{ flexDirection: "row", gap: space.xs }}>
-              <Button
-                label="− Set"
-                style={{ width: 64, opacity: canRemoveLast ? 1 : 0.35 }}
-                disabled={!canRemoveLast}
-                accessibilityLabel="Remove last set"
-                onPress={() => last && log.removeSet(session.id, exercise.id, last.id)}
-              />
-              <Button
-                label="+ Set"
-                style={{ width: 64 }}
-                accessibilityLabel="Add a set"
-                onPress={() => log.addSet(session.id, exercise.id)}
-              />
-            </View>
+            <Button
+              label="+ Set"
+              disabled={!canAdd}
+              style={{ width: 64, opacity: canAdd ? 1 : 0.35 }}
+              accessibilityLabel="Add a set"
+              onPress={() => log.addSet(session.id, exercise.id)}
+            />
           </View>
           <View style={{ flexDirection: "row", gap: space.sm }}>
             {fields.map((f) => (
@@ -136,6 +136,7 @@ const DONE_COL = 44;
 /**
  * Set · weight · done table with a small "Rest" line between sets. The current
  * step is highlighted and the rest are dimmed; tap a set to jump to it.
+ * Scrolls once there are more sets than fit.
  */
 function StepTable({ timer, exercise, fields, onToggleDone }: StepTableProps) {
   const scrollRef = useRef<ScrollView>(null);
@@ -164,7 +165,7 @@ function StepTable({ timer, exercise, fields, onToggleDone }: StepTableProps) {
         </AppText>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingBottom: space.sm }}>
+      <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: space.sm }}>
         {timer.rows.map((row, i) => {
           const isCurrent = i === timer.rowIndex;
           const set = exercise.sets.find((s) => s.id === row.setId);
@@ -208,11 +209,7 @@ function StepTable({ timer, exercise, fields, onToggleDone }: StepTableProps) {
               </AppText>
               <View style={{ width: DONE_COL, alignItems: "center" }}>
                 {set && (
-                  <Checkbox
-                    checked={set.done}
-                    onChange={(done) => onToggleDone(set.id, done)}
-                    label={`Set ${row.setNumber} done`}
-                  />
+                  <Checkbox checked={set.done} onChange={(done) => onToggleDone(set.id, done)} label={`Set ${row.setNumber} done`} />
                 )}
               </View>
             </Pressable>

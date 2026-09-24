@@ -1,8 +1,8 @@
 import { View } from "react-native";
 
-import { AppText, Box, Button, Checkbox, SwipeToDelete } from "@/components/ui";
+import { AppText, Box, Button, Checkbox } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
-import { MEASURES, fieldLabel } from "@/data/categories";
+import { MAX_SETS, MEASURES, fieldLabel } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { SessionExercise, SetValues } from "@/data/types";
 
@@ -20,10 +20,13 @@ const SET_COL = 36;
 /** Logs what was actually done, set by set. */
 export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveSet }: SessionExerciseCardProps) {
   const fields = MEASURES[exercise.prescription.measure].setFields;
+  const last = exercise.sets.at(-1);
+  const canAdd = exercise.sets.length < MAX_SETS;
+  const canRemove = exercise.sets.length > 1;
 
   return (
     <Box style={{ padding: space.sm, gap: space.sm }}>
-      <AppText variant="note" color={colors.placeholder}>
+      <AppText variant="note" color={colors.placeholder} align="center">
         Planned: {formatPrescription(exercise.prescription)}
       </AppText>
 
@@ -39,19 +42,31 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
       </View>
 
       {exercise.sets.map((set) => (
-        <SwipeToDelete key={set.id} label={`set ${set.position + 1}`} onDelete={() => onRemoveSet(set.id)} size={44} outlined={false}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: colors.paper, paddingVertical: 2 }}>
-            <AppText variant="label" style={{ width: SET_COL }}>
-              {set.position + 1}
-            </AppText>
-            <SetSteppers set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
-            <View style={{ flex: 1 }} />
-            <Checkbox checked={set.done} onChange={(done) => onUpdateSet(set.id, { done })} label={`Set ${set.position + 1} done`} />
-          </View>
-        </SwipeToDelete>
+        <View key={set.id} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 2 }}>
+          <AppText variant="label" style={{ width: SET_COL }}>
+            {set.position + 1}
+          </AppText>
+          <SetSteppers set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
+          <View style={{ flex: 1 }} />
+          <Checkbox checked={set.done} onChange={(done) => onUpdateSet(set.id, { done })} label={`Set ${set.position + 1} done`} />
+        </View>
       ))}
 
-      <Button label="+ Add set" style={{ width: 100 }} onPress={onAddSet} />
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <Button
+          label="− Remove set"
+          accessibilityLabel="Remove last set"
+          disabled={!canRemove}
+          style={{ width: 120, opacity: canRemove ? 1 : 0.35 }}
+          onPress={() => last && onRemoveSet(last.id)}
+        />
+        <Button
+          label="+ Add set"
+          disabled={!canAdd}
+          style={{ width: 100, opacity: canAdd ? 1 : 0.35 }}
+          onPress={onAddSet}
+        />
+      </View>
     </Box>
   );
 }

@@ -14,6 +14,8 @@ export const colors = {
   fillLight: "#EAEAEA",
   fillFaint: "#F5F5F5",
   placeholder: "#C0C0C0",
+  // Start button and the timer's GO panel
+  go: "#B9E8B0",
   // Destructive actions (swipe-to-delete)
   danger: "#E03B2F",
 } as const;
