@@ -23,6 +23,9 @@ const SIZES = {
   large: { button: 32, input: 48, text: type.label },
 } as const;
 
+/** Height of a regular stepper, for laying out rows of them. */
+export const STEPPER_HEIGHT = SIZES.regular.button;
+
 function round(n: number) {
   return Math.round(n * 100) / 100;
 }

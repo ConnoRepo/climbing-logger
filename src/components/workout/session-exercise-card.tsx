@@ -1,4 +1,5 @@
-import { View } from "react-native";
+import { useRef } from "react";
+import { ScrollView, View } from "react-native";
 
 import { AppText, Box, Button } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
@@ -6,7 +7,11 @@ import { MAX_SETS, MEASURES } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { SessionExercise, SetValues } from "@/data/types";
 
-import { SetHeader, SetRow } from "./set-row";
+import { SET_ROW_HEIGHT, SetHeader, SetRow } from "./set-row";
+
+/** The card is always this many sets tall; more sets scroll inside it. */
+const VISIBLE_SETS = 5;
+const LIST_HEIGHT = VISIBLE_SETS * SET_ROW_HEIGHT + (VISIBLE_SETS - 1) * space.sm;
 
 type SessionExerciseCardProps = {
   exercise: SessionExercise;
@@ -21,6 +26,9 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
   const last = exercise.sets.at(-1);
   const canAdd = exercise.sets.length < MAX_SETS;
   const canRemove = exercise.sets.length > 1;
+  const list = useRef<ScrollView>(null);
+  // Set when a set is added, so the list scrolls to show it once it has rendered.
+  const added = useRef(false);
 
   return (
     <Box style={{ padding: space.sm, gap: space.sm }}>
@@ -30,9 +38,23 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
 
       <SetHeader fields={fields} />
 
-      {exercise.sets.map((set) => (
-        <SetRow key={set.id} set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
-      ))}
+      <ScrollView
+        ref={list}
+        style={{ height: LIST_HEIGHT, flexGrow: 0 }}
+        contentContainerStyle={{ gap: space.sm }}
+        scrollEnabled={exercise.sets.length > VISIBLE_SETS}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled"
+        onContentSizeChange={() => {
+          if (!added.current) return;
+          added.current = false;
+          list.current?.scrollToEnd();
+        }}
+      >
+        {exercise.sets.map((set) => (
+          <SetRow key={set.id} set={set} fields={fields} onChange={(actual) => onUpdateSet(set.id, { actual })} />
+        ))}
+      </ScrollView>
 
       {/* 15% more room above the buttons than between the other rows. */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm * 0.15 }}>
@@ -48,7 +70,10 @@ export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveS
           accessibilityLabel="Add a set"
           disabled={!canAdd}
           style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
-          onPress={onAddSet}
+          onPress={() => {
+            added.current = true;
+            onAddSet();
+          }}
         />
       </View>
     </Box>

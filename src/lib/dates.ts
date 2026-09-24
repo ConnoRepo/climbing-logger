@@ -27,6 +27,23 @@ export function formatDayHeader(key: DateKey) {
   return `${WEEKDAYS[date.getDay()]}, ${ordinal(date.getDate())}`;
 }
 
+/** The day `days` after `key` (negative for before). */
+export function addDays(key: DateKey, days: number): DateKey {
+  const date = fromKey(key);
+  return toKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() + days));
+}
+
+/** Whole days from `from` to `to`. */
+export function daysBetween(from: DateKey, to: DateKey) {
+  return Math.round((fromKey(to).getTime() - fromKey(from).getTime()) / 86_400_000);
+}
+
+/** "Mar 2", for chart axes. */
+export function formatAxisDate(key: DateKey) {
+  const date = fromKey(key);
+  return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
+}
+
 /** "Mar, 2nd" */
 export function formatShortDate(key: DateKey) {
   const date = fromKey(key);

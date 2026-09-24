@@ -1,6 +1,6 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
 
-import { AppText, Checkbox } from "@/components/ui";
+import { AppText, Checkbox, STEPPER_HEIGHT } from "@/components/ui";
 import { space } from "@/constants/theme";
 import { fieldLabel, type FieldSpec } from "@/data/categories";
 import type { SetLog, SetValues } from "@/data/types";
@@ -12,6 +12,10 @@ import { SetSteppers, STEPPER_COL } from "./set-steppers";
 const SET_COL = 36;
 const DONE_COL = 30;
 const GAP = space.xs;
+const ROW_PAD = 2;
+
+/** Height of a regular (not active) set row. */
+export const SET_ROW_HEIGHT = STEPPER_HEIGHT + ROW_PAD * 2;
 
 const row: ViewStyle = { flexDirection: "row", alignItems: "center", gap: GAP };
 const spacer = <View style={{ flex: 1 }} />;
@@ -48,7 +52,7 @@ type SetRowProps = {
 /** Set number on the left, a stepper per logged field on the right. */
 export function SetRow({ set, fields, onChange, onToggleDone, active, style }: SetRowProps) {
   return (
-    <View style={[row, { paddingVertical: active ? 6 : 2 }, style]}>
+    <View style={[row, { paddingVertical: active ? 6 : ROW_PAD }, style]}>
       <AppText variant={active ? "heading" : "label"} align="center" style={{ width: SET_COL }}>
         {set.position + 1}
       </AppText>

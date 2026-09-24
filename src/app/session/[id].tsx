@@ -1,10 +1,11 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, ScrollView, useWindowDimensions, View } from "react-native";
+import { ScrollView, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Box, Button, Stepper } from "@/components/ui";
+import { AppText, Box, Button, Pager, Stepper } from "@/components/ui";
 import { SessionExerciseCard } from "@/components/workout/session-exercise-card";
-import { borders, colors, space } from "@/constants/theme";
+import { WeightGraph } from "@/components/workout/weight-graph";
+import { borders, colors, space, type } from "@/constants/theme";
 import { formatShortDate } from "@/lib/dates";
 import { useLog } from "@/store/log";
 
@@ -24,7 +25,6 @@ export default function SessionScreen() {
     );
   }
 
-  const template = session.templateId ? log.template(session.templateId) : undefined;
   // The timer runs the first exercise, so that's whose rest is edited here.
   const timed = session.exercises[0];
   const sets = session.exercises.flatMap((e) => e.sets);
@@ -39,32 +39,32 @@ export default function SessionScreen() {
         contentContainerStyle={{ paddingHorizontal: space.md, paddingBottom: space.xl, gap: space.md }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ alignItems: "center" }}>
-          <AppText variant="header" align="center">
-            {session.name}
-          </AppText>
-          {template && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push({ pathname: "/template/[id]", params: { id: template.id } })}
-              hitSlop={8}
-            >
-              <AppText variant="note" color={colors.placeholder} style={{ textDecorationLine: "underline" }}>
-                Edit saved workout
-              </AppText>
-            </Pressable>
-          )}
-        </View>
+        {/* Keeps the room the old "Edit saved workout" line took, so the card sits where it did. */}
+        <AppText variant="header" align="center" style={{ marginBottom: type.note.lineHeight }}>
+          {session.name}
+        </AppText>
 
-        {session.exercises.map((e) => (
-          <SessionExerciseCard
-            key={e.id}
-            exercise={e}
-            onUpdateSet={(setId, change) => log.updateSet(session.id, e.id, setId, change)}
-            onAddSet={() => log.addSet(session.id, e.id)}
-            onRemoveSet={(setId) => log.removeSet(session.id, e.id, setId)}
-          />
-        ))}
+        {session.exercises.map((e) => {
+          const card = (
+            <SessionExerciseCard
+              exercise={e}
+              onUpdateSet={(setId, change) => log.updateSet(session.id, e.id, setId, change)}
+              onAddSet={() => log.addSet(session.id, e.id)}
+              onRemoveSet={(setId) => log.removeSet(session.id, e.id, setId)}
+            />
+          );
+          // Swipe left from the sets to this workout's weight over time. The pages reach into
+          // the screen padding so the graph's axis marks can sit there, leaving its plot about
+          // as wide as the sets box.
+          return session.templateId ? (
+            <Pager key={e.id} labels={["sets", "weight graph"]} bleed={space.md}>
+              <View style={{ paddingHorizontal: space.md }}>{card}</View>
+              <WeightGraph points={log.weightHistory(session.templateId)} />
+            </Pager>
+          ) : (
+            <View key={e.id}>{card}</View>
+          );
+        })}
 
         {timed && (
           <Box

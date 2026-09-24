@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
 
 import { newId } from "@/data/ids";
+import { SHOW_FAKE_POINTS, weightHistory, withFakePoints } from "@/data/progress";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
 import type { AppData, Category, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
@@ -43,6 +44,10 @@ function useLogState() {
     templatesIn: (category: Category) => templates.filter((t) => t.category === category),
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
     journalFor: (date: DateKey) => data.journal[date] ?? "",
+    weightHistory: (templateId: string) => {
+      const points = weightHistory(data.sessions, templateId);
+      return SHOW_FAKE_POINTS ? withFakePoints(points) : points;
+    },
 
     // Templates
     createTemplate: (category: Category) => {

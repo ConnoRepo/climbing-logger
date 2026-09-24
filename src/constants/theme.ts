@@ -16,6 +16,10 @@ export const colors = {
   placeholder: "#C0C0C0",
   // Start button and the timer's GO panel
   go: "#B9E8B0",
+  // Weight graph points: a shade darker than `fill` so they read over the lines
+  graphDot: "#B8B8B8",
+  // Heaviest point on a weight graph
+  gold: "#F5DC7A",
   // Destructive actions (swipe-to-delete)
   danger: "#E03B2F",
 } as const;
@@ -37,6 +41,7 @@ export const type = {
   button: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 19 }, // Journal / + Workout
   note: { fontFamily: fonts.semiBold, fontSize: 15, lineHeight: 18 }, // Start typing...
   body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 16 }, // day pills
+  axis: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 14 }, // graph axis marks
 } as const;
 
 export type TypeVariant = keyof typeof type;
