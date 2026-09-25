@@ -32,6 +32,8 @@ export type Prescription = {
   name: string;
   measure: Measure;
   sets: number;
+  /** Each set's own planned values, when they differ (8, 6, 4 reps). Unset fields use the flat ones below. */
+  setValues?: SetValues[];
   /** reps · intervals: reps per set · climbs: problems per set */
   reps?: number;
   /** time: hold/duration · intervals: seconds on */

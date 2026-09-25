@@ -1,4 +1,4 @@
-import { MAX_SETS, MEASURES, categoryInfo, defaultMeasure } from "@/data/categories";
+import { MAX_SETS, MEASURES, carriedForward, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
 import { instantiate, makeSets } from "@/data/schedule";
 import { newPrescription } from "@/data/templates";
@@ -119,8 +119,9 @@ export function reducer(state: AppData, action: Action): AppData {
           patch = { ...patch, name, exerciseId: null };
         }
       }
-      // Switching measure fills in that measure's sensible defaults.
-      if (patch.measure) patch = { ...MEASURES[patch.measure].defaults, ...patch };
+      // Switching measure fills in that measure's sensible defaults (and drops per-set values
+      // that were for the old measure's fields).
+      if (patch.measure) patch = { ...MEASURES[patch.measure].defaults, setValues: undefined, ...patch };
       return mapTemplate(next, action.templateId, (t) => ({
         ...t,
         exercises: t.exercises.map((e) => (e.id === action.exerciseId ? { ...e, ...patch } : e)),
@@ -202,9 +203,9 @@ export function reducer(state: AppData, action: Action): AppData {
         mapSessionExercise(s, action.exerciseId, (e) => {
           const target = e.sets.find((set) => set.id === action.setId);
           if (!target) return e;
-          // A new weight carries forward to every later set (and so to sets added later,
+          // New reps or weight carry forward to every later set (and so to sets added later,
           // which copy the last one); earlier sets keep what they were.
-          const weightLb = action.actual?.weightLb;
+          const carried = carriedForward(action.actual);
           return {
             ...e,
             sets: e.sets.map((set) => {
@@ -215,8 +216,8 @@ export function reducer(state: AppData, action: Action): AppData {
                   done: action.done ?? set.done,
                 };
               }
-              if (weightLb !== undefined && set.position > target.position) {
-                return { ...set, actual: { ...set.actual, weightLb } };
+              if (carried && set.position > target.position) {
+                return { ...set, actual: { ...set.actual, ...carried } };
               }
               return set;
             }),

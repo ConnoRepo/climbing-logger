@@ -2,7 +2,8 @@ import { router, Stack, useLocalSearchParams } from "expo-router";
 import { ScrollView, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Box, Button, Pager, Stepper } from "@/components/ui";
+import { AppText, Button, Pager } from "@/components/ui";
+import { RestBox } from "@/components/workout/rest-box";
 import { SessionExerciseCard } from "@/components/workout/session-exercise-card";
 import { WeightGraph } from "@/components/workout/weight-graph";
 import { borders, colors, space, type } from "@/constants/theme";
@@ -67,28 +68,7 @@ export default function SessionScreen() {
         })}
 
         {timed && (
-          <Box
-            style={{
-              width: "90%",
-              alignSelf: "center",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingVertical: space.xs,
-              paddingHorizontal: space.sm,
-            }}
-          >
-            <AppText variant="button" numberOfLines={1} style={{ flexShrink: 1 }}>
-              Rest between sets (s)
-            </AppText>
-            <Stepper
-              label="rest between sets in seconds"
-              value={timed.prescription.restSeconds}
-              step={10}
-              min={0}
-              onChange={(v) => log.setRest(session.id, timed.id, v)}
-            />
-          </Box>
+          <RestBox value={timed.prescription.restSeconds} onChange={(v) => log.setRest(session.id, timed.id, v)} />
         )}
       </ScrollView>
 

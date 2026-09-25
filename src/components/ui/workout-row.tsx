@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Pressable, View } from "react-native";
 
 import { colors } from "@/constants/theme";
@@ -12,8 +13,10 @@ type WorkoutRowProps = {
   title: string;
   subtitle?: string;
   icon?: IconName;
-  done: boolean;
+  done?: boolean;
   onToggle?: (done: boolean) => void;
+  /** Shown in place of the done checkbox, e.g. the "+" on the add-workout list. */
+  accessory?: ReactNode;
   /** Tapping the icon or the name opens the workout. */
   onOpen?: () => void;
   /** When set, swiping the row left reveals a red delete button. */
@@ -23,7 +26,7 @@ type WorkoutRowProps = {
 /** Every row is the same size: fixed height, one-line title, subtitle line always reserved. */
 export const WORKOUT_ROW_HEIGHT = 78;
 
-export function WorkoutRow({ title, subtitle, icon, done, onToggle, onOpen, onRemove }: WorkoutRowProps) {
+export function WorkoutRow({ title, subtitle, icon, done = false, onToggle, accessory, onOpen, onRemove }: WorkoutRowProps) {
   const row = (
     <Box
       style={{
@@ -52,7 +55,7 @@ export function WorkoutRow({ title, subtitle, icon, done, onToggle, onOpen, onRe
           </AppText>
         </View>
       </Pressable>
-      <Checkbox checked={done} onChange={onToggle} label={title} />
+      {accessory ?? <Checkbox checked={done} onChange={onToggle} label={title} />}
     </Box>
   );
 

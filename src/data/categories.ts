@@ -101,3 +101,21 @@ export function plannedSetValues(p: Prescription): SetValues {
   }
   return values;
 }
+
+/**
+ * The part of a set change that also applies to every later set: reps
+ * (hangs, problems) and weight. Undefined when the change has neither.
+ */
+export function carriedForward(change: SetValues | undefined): SetValues | undefined {
+  if (!change) return undefined;
+  const carried: SetValues = {};
+  if (change.reps !== undefined) carried.reps = change.reps;
+  if (change.weightLb !== undefined) carried.weightLb = change.weightLb;
+  return Object.keys(carried).length ? carried : undefined;
+}
+
+/** The planned values for every set: its own where it has them, otherwise the prescription's. */
+export function plannedSets(p: Prescription): SetValues[] {
+  const base = plannedSetValues(p);
+  return Array.from({ length: p.sets }, (_, i) => ({ ...base, ...p.setValues?.[i] }));
+}

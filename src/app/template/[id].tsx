@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Button, TextField } from "@/components/ui";
 import { ExerciseCard } from "@/components/workout/exercise-card";
+import { RestBox } from "@/components/workout/rest-box";
 import { colors, space } from "@/constants/theme";
 import { categoryInfo } from "@/data/categories";
 import { templateExercise } from "@/data/templates";
@@ -58,11 +59,17 @@ function Editor({ template }: { template: WorkoutTemplate }) {
       </View>
 
       {exercise && (
-        <ExerciseCard
-          prescription={exercise}
-          measures={categoryInfo(template.category).measures}
-          onChange={(patch) => log.updateTemplateExercise(template.id, exercise.id, patch)}
-        />
+        <>
+          <ExerciseCard
+            prescription={exercise}
+            measures={categoryInfo(template.category).measures}
+            onChange={(patch) => log.updateTemplateExercise(template.id, exercise.id, patch)}
+          />
+          <RestBox
+            value={exercise.restSeconds}
+            onChange={(restSeconds) => log.updateTemplateExercise(template.id, exercise.id, { restSeconds })}
+          />
+        </>
       )}
 
       <AppText variant="note" color={colors.placeholder} align="center">

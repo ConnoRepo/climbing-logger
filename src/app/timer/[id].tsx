@@ -150,7 +150,9 @@ function SetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemoveSet }
               style={{ paddingVertical: 4, backgroundColor: isCurrent ? colors.fillLight : undefined }}
             >
               <SetRow
-                set={set}
+                position={set.position}
+                values={set.actual}
+                done={set.done}
                 fields={fields}
                 onChange={(actual) => onUpdateSet(set.id, { actual })}
                 onToggleDone={(done) => onUpdateSet(set.id, { done })}

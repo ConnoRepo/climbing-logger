@@ -3,7 +3,7 @@ import { View, type StyleProp, type ViewStyle } from "react-native";
 import { AppText, Checkbox, STEPPER_HEIGHT } from "@/components/ui";
 import { space } from "@/constants/theme";
 import { fieldLabel, type FieldSpec } from "@/data/categories";
-import type { SetLog, SetValues } from "@/data/types";
+import type { SetValues } from "@/data/types";
 
 import { SetSteppers, STEPPER_COL } from "./set-steppers";
 
@@ -39,7 +39,10 @@ export function SetHeader({ fields, withDone }: { fields: FieldSpec[]; withDone?
 }
 
 type SetRowProps = {
-  set: SetLog;
+  /** 0-based set number. */
+  position: number;
+  values: SetValues;
+  done?: boolean;
   fields: FieldSpec[];
   onChange: (actual: SetValues) => void;
   /** Shows a done checkbox at the end of the row. */
@@ -50,17 +53,17 @@ type SetRowProps = {
 };
 
 /** Set number on the left, a stepper per logged field on the right. */
-export function SetRow({ set, fields, onChange, onToggleDone, active, style }: SetRowProps) {
+export function SetRow({ position, values, done = false, fields, onChange, onToggleDone, active, style }: SetRowProps) {
   return (
     <View style={[row, { paddingVertical: active ? 6 : ROW_PAD }, style]}>
       <AppText variant={active ? "heading" : "label"} align="center" style={{ width: SET_COL }}>
-        {set.position + 1}
+        {position + 1}
       </AppText>
       {spacer}
-      <SetSteppers set={set} fields={fields} onChange={onChange} size={active ? "large" : "regular"} />
+      <SetSteppers position={position} values={values} fields={fields} onChange={onChange} size={active ? "large" : "regular"} />
       {onToggleDone && (
         <View style={{ width: DONE_COL, alignItems: "center" }}>
-          <Checkbox checked={set.done} onChange={onToggleDone} label={`Set ${set.position + 1} done`} />
+          <Checkbox checked={done} onChange={onToggleDone} label={`Set ${position + 1} done`} />
         </View>
       )}
     </View>

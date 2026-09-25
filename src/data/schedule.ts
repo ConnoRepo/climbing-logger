@@ -1,12 +1,13 @@
 import type { DateKey } from "@/lib/dates";
 
-import { plannedSetValues } from "./categories";
+import { plannedSetValues, plannedSets } from "./categories";
 import { newId, now } from "./ids";
 import type { Prescription, Session, SessionExercise, SetLog, WorkoutTemplate } from "./types";
 
 export function makeSets(p: Prescription, count = p.sets): SetLog[] {
+  const each = plannedSets(p);
   return Array.from({ length: count }, (_, position) => {
-    const planned = plannedSetValues(p);
+    const planned = each[position] ?? plannedSetValues(p);
     return { id: newId(), position, planned, actual: { ...planned }, done: false };
   });
 }

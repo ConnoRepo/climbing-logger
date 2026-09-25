@@ -23,26 +23,60 @@ export function SheetRow({ children }: { children: ReactNode }) {
   );
 }
 
-const square = { width: 37, height: 37, alignItems: "center", justifyContent: "center", borderWidth: borders.hairline, borderColor: colors.ink } as const;
+const square = { alignItems: "center", justifyContent: "center", borderWidth: borders.thin, borderColor: colors.ink } as const;
 
-function SquareSymbol({ symbol }: { symbol: string }) {
+const CHEVRON = 13;
+const PLUS = 17;
+const STROKE = 3;
+
+type Symbol = "+" | "›";
+
+// Drawn rather than typed so they sit in the true centre of the square: the
+// glyphs ride high in their line box.
+function SquareSymbol({ symbol }: { symbol: Symbol }) {
+  if (symbol === "+") {
+    return (
+      <View style={{ width: PLUS, height: PLUS, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ position: "absolute", width: PLUS, height: STROKE, backgroundColor: colors.ink }} />
+        <View style={{ position: "absolute", width: STROKE, height: PLUS, backgroundColor: colors.ink }} />
+      </View>
+    );
+  }
+  // Two sides of a square turned 45°, nudged left so the stroke (not the
+  // square's bounds) is what's centred.
   return (
-    <View style={{ marginTop: -4 }}>
-      <AppText variant="title" style={{ lineHeight: 44 }}>
-        {symbol}
-      </AppText>
-    </View>
+    <View
+      style={{
+        width: CHEVRON,
+        height: CHEVRON,
+        borderTopWidth: STROKE,
+        borderRightWidth: STROKE,
+        borderColor: colors.ink,
+        transform: [{ translateX: -CHEVRON * 0.3 }, { rotate: "45deg" }],
+      }}
+    />
   );
 }
 
 /**
  * The thin-outlined square ("+" / "›") at the end of a sheet row. Without
  * `onPress` it is just the visual, for rows that are tappable as a whole.
+ * `size` 30 matches the done checkbox, for rows shaped like the home screen's.
  */
-export function SquareButton({ symbol, label, onPress }: { symbol: string; label?: string; onPress?: () => void }) {
+export function SquareButton({
+  symbol,
+  label,
+  onPress,
+  size = 37,
+}: {
+  symbol: Symbol;
+  label?: string;
+  onPress?: () => void;
+  size?: number;
+}) {
   if (!onPress) {
     return (
-      <View style={[square, { backgroundColor: colors.paper }]}>
+      <View style={[square, { width: size, height: size, backgroundColor: colors.paper }]}>
         <SquareSymbol symbol={symbol} />
       </View>
     );
@@ -53,7 +87,7 @@ export function SquareButton({ symbol, label, onPress }: { symbol: string; label
       accessibilityLabel={label}
       onPress={onPress}
       hitSlop={8}
-      style={({ pressed }) => [square, { backgroundColor: pressed ? colors.fill : colors.paper }]}
+      style={({ pressed }) => [square, { width: size, height: size, backgroundColor: pressed ? colors.fill : colors.paper }]}
     >
       <SquareSymbol symbol={symbol} />
     </Pressable>
