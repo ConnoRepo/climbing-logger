@@ -12,8 +12,9 @@ import Animated, {
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
 
-import { FLOATING_BAR_HEIGHT } from "@/components/ui/floating-bar";
+import { FLOATING_BAR_HEIGHT } from "@/components/ui";
 import { space } from "@/constants/theme";
+import { clamp } from "@/lib/math";
 
 import { DROP_ZONE_INSET } from "./drop-zone";
 
@@ -31,11 +32,6 @@ const SWITCH_AT = 1 / 3;
 /** A drop zone, or a row within one. `inset` is where a zone's rows start inside it. */
 type Zone = { y: number; height: number; inset?: number };
 type Slot = { index: number; lineY: number };
-
-const clamp = (v: number, lo: number, hi: number) => {
-  "worklet";
-  return Math.min(Math.max(v, lo), hi);
-};
 
 /** The drop zone at content position `y`: the one containing it, else the nearest. -1 if none. */
 function hitTest(zones: Zone[], y: number) {

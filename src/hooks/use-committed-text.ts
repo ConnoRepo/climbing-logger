@@ -26,7 +26,7 @@ export function useCommittedText(
   }
 
   // Leaving the screen while still typing counts as finishing.
-  useEffect(() => () => flush(), []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => flush(), []);
 
   return {
     value,

@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { AppText, Button } from "@/components/ui";
-import { FloatingBar } from "@/components/ui/floating-bar";
+import { AppText, Button, FloatingBar } from "@/components/ui";
 import { DailyView } from "@/components/week/daily-view";
 import { WeeklyView } from "@/components/week/weekly-view";
 import { colors, space } from "@/constants/theme";

@@ -7,6 +7,7 @@ import { borders, colors, space, type } from "@/constants/theme";
 import { formatWeight } from "@/data/format";
 import type { WeightPoint } from "@/data/progress";
 import { addDays, daysBetween, formatAxisDate, formatShortDate, toKey, type DateKey } from "@/lib/dates";
+import { clamp } from "@/lib/math";
 
 // The graph always shows the last 4 weeks, ending today.
 // TODO: make the time range customizable (e.g. 1 week / 3 months / all time) later.
@@ -33,8 +34,6 @@ const HIT = 44;
 const CALLOUT_W = 120;
 const CALLOUT_H = 56;
 const CALLOUT_GAP = 12;
-
-const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
 type Size = { width: number; height: number };
 

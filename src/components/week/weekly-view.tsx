@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { Pressable, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
 
-import { AppText } from "@/components/ui";
-import { FLOATING_BAR_HEIGHT } from "@/components/ui/floating-bar";
+import { AppText, LIST_SIDE } from "@/components/ui";
 import { space } from "@/constants/theme";
 import type { Session } from "@/data/types";
 import { addDays, formatWeekRange, toKey, weekOf, type DateKey } from "@/lib/dates";
@@ -12,7 +9,7 @@ import { useLog } from "@/store/log";
 
 import { DayMarkers } from "./day-markers";
 import { DaySection } from "./day-section";
-import { DropLine, LIST_SIDE, LiftedCopy } from "./drag-overlay";
+import { DragList } from "./drag-list";
 import { DraggableSession } from "./draggable-session";
 import { DropZone } from "./drop-zone";
 import { UnscheduledSection } from "./unscheduled-section";
@@ -57,24 +54,12 @@ export function WeeklyView() {
     ...week.map((date, i) => (expanded.has(date) ? days[i].map((s) => s.id) : [])),
   ];
 
-  const {
-    viewportRef,
-    scrollRef,
-    scrollY,
-    contentHeight,
-    hover,
-    lineY,
-    ghostX,
-    ghostY,
-    dragging,
-    registerZone,
-    registerRow,
-    gestureFor,
-  } = useSessionDrag(rowIds, (id, zone, index) => place(id, zone === UNSCHEDULED ? null : week[zone - 1], index));
-  const lifted = dragging ? log.session(dragging) : undefined;
+  const drag = useSessionDrag(rowIds, (id, zone, index) =>
+    place(id, zone === UNSCHEDULED ? null : week[zone - 1], index),
+  );
 
   const draggable = (s: Session) => (
-    <DraggableSession session={s} gesture={gestureFor(s.id)} lifted={s.id === dragging} />
+    <DraggableSession session={s} gesture={drag.gestureFor(s.id)} lifted={s.id === drag.dragging} />
   );
 
   return (
@@ -85,53 +70,36 @@ export function WeeklyView() {
         onNext={() => log.selectDate(addDays(log.selectedDate, 7))}
       />
 
-      <Animated.View ref={viewportRef} style={{ flex: 1 }} collapsable={false}>
-        <GestureDetector gesture={Gesture.Native()}>
-          <Animated.ScrollView
-            ref={scrollRef}
-            scrollEnabled={!dragging}
-            onContentSizeChange={(_, h) => contentHeight.set(h)}
-            contentContainerStyle={{
-              paddingHorizontal: LIST_SIDE,
-              paddingTop: space.md,
-              paddingBottom: FLOATING_BAR_HEIGHT + space.lg,
-              gap: space.md,
-            }}
-          >
-            <DropZone index={UNSCHEDULED} hover={hover} onLayout={registerZone}>
-              <UnscheduledSection
-                sessions={log.unscheduled}
-                renderSession={(s) => (
-                  <View key={s.id} style={{ gap: space.xs }} onLayout={(e) => registerRow(s.id, e.nativeEvent.layout)}>
-                    {draggable(s)}
-                    <DayMarkers week={week} onPick={(date) => place(s.id, date)} />
-                  </View>
-                )}
-              />
-            </DropZone>
+      <DragList drag={drag} contentContainerStyle={{ paddingTop: space.md, gap: space.md }}>
+        <DropZone index={UNSCHEDULED} hover={drag.hover} onLayout={drag.registerZone}>
+          <UnscheduledSection
+            sessions={log.unscheduled}
+            renderSession={(s) => (
+              <View key={s.id} style={{ gap: space.xs }} onLayout={(e) => drag.registerRow(s.id, e.nativeEvent.layout)}>
+                {draggable(s)}
+                <DayMarkers week={week} onPick={(date) => place(s.id, date)} />
+              </View>
+            )}
+          />
+        </DropZone>
 
-            {week.map((date, i) => (
-              <DropZone key={i} index={i + 1} hover={hover} onLayout={registerZone}>
-                <DaySection
-                  date={date}
-                  sessions={days[i]}
-                  isToday={date === today}
-                  expanded={expanded.has(date)}
-                  onToggle={() => toggle(date)}
-                  renderSession={(s) => (
-                    <View key={s.id} onLayout={(e) => registerRow(s.id, e.nativeEvent.layout)}>
-                      {draggable(s)}
-                    </View>
-                  )}
-                />
-              </DropZone>
-            ))}
-          </Animated.ScrollView>
-        </GestureDetector>
-
-        {lifted && <DropLine y={lineY} scrollY={scrollY} />}
-        {lifted && <LiftedCopy session={lifted} x={ghostX} y={ghostY} />}
-      </Animated.View>
+        {week.map((date, i) => (
+          <DropZone key={i} index={i + 1} hover={drag.hover} onLayout={drag.registerZone}>
+            <DaySection
+              date={date}
+              sessions={days[i]}
+              isToday={date === today}
+              expanded={expanded.has(date)}
+              onToggle={() => toggle(date)}
+              renderSession={(s) => (
+                <View key={s.id} onLayout={(e) => drag.registerRow(s.id, e.nativeEvent.layout)}>
+                  {draggable(s)}
+                </View>
+              )}
+            />
+          </DropZone>
+        ))}
+      </DragList>
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { Button } from "@/components/ui";
 import { space } from "@/constants/theme";
@@ -52,26 +52,48 @@ export function SetList({ sets, fields, onChange, onAdd, onRemove }: SetListProp
         ))}
       </ScrollView>
 
-      {/* 15% more room above the buttons than between the other rows. */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm * 0.15 }}>
-        <Button
-          label="− Set"
-          accessibilityLabel="Remove last set"
-          disabled={!canRemove}
-          style={{ width: 72, opacity: canRemove ? 1 : 0.35 }}
-          onPress={onRemove}
-        />
-        <Button
-          label="+ Set"
-          accessibilityLabel="Add a set"
-          disabled={!canAdd}
-          style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
-          onPress={() => {
-            added.current = true;
-            onAdd();
-          }}
-        />
-      </View>
+      <SetButtons
+        canAdd={canAdd}
+        canRemove={canRemove}
+        onAdd={() => {
+          added.current = true;
+          onAdd();
+        }}
+        onRemove={onRemove}
+        // 15% more room above the buttons than between the other rows.
+        style={{ marginTop: space.sm * 0.15 }}
+      />
     </>
+  );
+}
+
+type SetButtonsProps = {
+  canAdd: boolean;
+  canRemove: boolean;
+  onAdd: () => void;
+  /** Removes the last set. */
+  onRemove: () => void;
+  style?: StyleProp<ViewStyle>;
+};
+
+/** − Set / + Set under a list of sets; each is faded out while it can't be used. */
+export function SetButtons({ canAdd, canRemove, onAdd, onRemove, style }: SetButtonsProps) {
+  return (
+    <View style={[{ flexDirection: "row", justifyContent: "space-between" }, style]}>
+      <Button
+        label="− Set"
+        accessibilityLabel="Remove last set"
+        disabled={!canRemove}
+        style={{ width: 72, opacity: canRemove ? 1 : 0.35 }}
+        onPress={onRemove}
+      />
+      <Button
+        label="+ Set"
+        accessibilityLabel="Add a set"
+        disabled={!canAdd}
+        style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
+        onPress={onAdd}
+      />
+    </View>
   );
 }

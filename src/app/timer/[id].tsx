@@ -4,6 +4,7 @@ import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Box, Button } from "@/components/ui";
+import { SetButtons } from "@/components/workout/set-list";
 import { SetHeader, SetRow } from "@/components/workout/set-row";
 import { borders, colors, space } from "@/constants/theme";
 import { MAX_SETS, MEASURES, type FieldSpec } from "@/data/categories";
@@ -53,7 +54,7 @@ function WorkoutTimer({ session, exercise }: { session: Session; exercise: Sessi
         )}
       </Box>
 
-      <SetList
+      <TimerSetList
         timer={timer}
         exercise={exercise}
         fields={fields}
@@ -88,7 +89,7 @@ function WorkoutTimer({ session, exercise }: { session: Session; exercise: Sessi
 /** Prev / Pause / Next, outlined like the workout screen's Start button. */
 const CONTROL = { height: 48, borderWidth: borders.thick, borderColor: colors.ink };
 
-type SetListProps = {
+type TimerSetListProps = {
   timer: ReturnType<typeof useWorkoutTimer>;
   exercise: SessionExercise;
   fields: FieldSpec[];
@@ -103,7 +104,7 @@ type SetListProps = {
  * on the clock above); only Prev / Next move between sets. Scrolls once there
  * are more sets than fit.
  */
-function SetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemoveSet }: SetListProps) {
+function TimerSetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemoveSet }: TimerSetListProps) {
   const scrollRef = useRef<ScrollView>(null);
   const rowY = useRef<Record<string, number>>({});
   // On a rest this is the set just finished.
@@ -163,22 +164,12 @@ function SetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemoveSet }
         })}
       </ScrollView>
 
-      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-        <Button
-          label="− Set"
-          accessibilityLabel="Remove last set"
-          disabled={!canRemove}
-          style={{ width: 72, opacity: canRemove ? 1 : 0.35 }}
-          onPress={() => last && onRemoveSet(last.id)}
-        />
-        <Button
-          label="+ Set"
-          accessibilityLabel="Add a set"
-          disabled={!canAdd}
-          style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
-          onPress={onAddSet}
-        />
-      </View>
+      <SetButtons
+        canAdd={canAdd}
+        canRemove={canRemove}
+        onAdd={onAddSet}
+        onRemove={() => last && onRemoveSet(last.id)}
+      />
     </Box>
   );
 }

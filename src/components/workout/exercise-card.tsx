@@ -2,7 +2,7 @@ import { View } from "react-native";
 
 import { AppText, Box, Checkbox, Pills, Stepper, TextField } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
-import { MEASURES, carriedForward, fieldLabel, plannedSets, type FieldSpec } from "@/data/categories";
+import { MEASURES, carriedForward, fieldLabel, plannedSets } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { Measure, Prescription, SetValues } from "@/data/types";
 
@@ -52,7 +52,7 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
 
       {shared.length > 0 && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", columnGap: space.md, rowGap: space.sm }}>
-          {shared.map((f: FieldSpec) => (
+          {shared.map((f) => (
             <Field
               key={f.key}
               label={fieldLabel(f)}

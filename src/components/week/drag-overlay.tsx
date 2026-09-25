@@ -1,13 +1,10 @@
 import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 
-import { Box } from "@/components/ui";
+import { Box, LIST_SIDE } from "@/components/ui";
 import { borders, colors } from "@/constants/theme";
 import type { Session } from "@/data/types";
 
 import { SessionRow } from "./draggable-session";
-
-/** Side padding of the lists these draw over, so they line up with the rows. */
-export const LIST_SIDE = 27.5;
 
 /** Marks the slot between rows where the held workout will land. */
 export function DropLine({ y, scrollY }: { y: SharedValue<number>; scrollY: SharedValue<number> }) {

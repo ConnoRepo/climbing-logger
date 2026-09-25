@@ -2,7 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { AppText, Icon } from "@/components/ui";
-import { SheetRow, SquareButton } from "@/components/workout/sheet-parts";
+import { SHEET_SIDE, SheetRow, SquareButton } from "@/components/workout/sheet-parts";
 import { colors, space } from "@/constants/theme";
 import { CATEGORIES } from "@/data/categories";
 
@@ -17,7 +17,7 @@ export default function AddWorkoutCategories() {
   return (
     <ScrollView
       style={{ backgroundColor: colors.paper }}
-      contentContainerStyle={{ paddingHorizontal: 39, paddingTop: 56, paddingBottom: space.xl, gap: space.md }}
+      contentContainerStyle={{ paddingHorizontal: SHEET_SIDE, paddingTop: 56, paddingBottom: space.xl, gap: space.md }}
     >
       {CATEGORIES.map((c) => (
         <Pressable key={c.id} accessibilityRole="button" accessibilityLabel={`Open ${c.label}`} onPress={() => open(c.id)}>

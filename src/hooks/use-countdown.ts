@@ -12,7 +12,10 @@ export function useCountdown(initialSeconds: number, onDone?: () => void) {
   const [run, setRun] = useState(0);
   const endAtRef = useRef(0);
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
 
   useEffect(() => {
     if (!isRunning) return;

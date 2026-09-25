@@ -5,6 +5,9 @@ import { Pressable, View } from "react-native";
 import { AppText, Box } from "@/components/ui";
 import { borders, colors } from "@/constants/theme";
 
+/** Side padding of the pages inside a sheet. */
+export const SHEET_SIDE = 39;
+
 /** "‹ Back" text link for screens stacked inside a sheet. */
 export function SheetBack({ label = "Back" }: { label?: string }) {
   return (

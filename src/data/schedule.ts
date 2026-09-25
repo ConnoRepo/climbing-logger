@@ -4,6 +4,11 @@ import { plannedSetValues, plannedSets } from "./categories";
 import { newId, now } from "./ids";
 import type { Prescription, Session, SessionExercise, SetLog, WorkoutTemplate } from "./types";
 
+/** The sessions on a day (or Unscheduled for null), in their order. */
+export function sessionsOn(sessions: Session[], date: DateKey | null) {
+  return sessions.filter((s) => s.date === date).sort((a, b) => a.position - b.position);
+}
+
 export function makeSets(p: Prescription, count = p.sets): SetLog[] {
   const each = plannedSets(p);
   return Array.from({ length: count }, (_, position) => {

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { borders, colors, type } from "@/constants/theme";
+import { clamp } from "@/lib/math";
 
 import { AppText } from "./text";
 
@@ -37,9 +38,13 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label,
   const [text, setText] = useState(String(current));
 
   // Follow outside changes (e.g. the +/− buttons, or a new set copying values).
-  useEffect(() => setText(String(current)), [current]);
+  const [shown, setShown] = useState(current);
+  if (shown !== current) {
+    setShown(current);
+    setText(String(current));
+  }
 
-  const set = (n: number) => onChange(round(Math.min(max, Math.max(min, n))));
+  const set = (n: number) => onChange(round(clamp(n, min, max)));
 
   function commit() {
     const n = Number.parseFloat(text.replace(",", "."));

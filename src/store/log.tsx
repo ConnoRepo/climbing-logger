@@ -2,14 +2,13 @@ import { createContext, useContext, useEffect, useReducer, useState, type ReactN
 
 import { newId } from "@/data/ids";
 import { SHOW_FAKE_POINTS, weightHistory, withFakePoints } from "@/data/progress";
+import { sessionsOn } from "@/data/schedule";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
-import type { AppData, Category, Prescription, Session, SetValues, WorkoutTemplate } from "@/data/types";
+import type { AppData, Category, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
-
-const inOrder = (sessions: Session[]) => sessions.sort((a, b) => a.position - b.position);
 
 const EMPTY: AppData = { exercises: [], templates: [], sessions: [], journal: {} };
 const SAVE_DELAY_MS = 400;
@@ -41,9 +40,9 @@ function useLogState() {
     selectDate,
 
     // Reads
-    sessionsFor: (date: DateKey) => inOrder(data.sessions.filter((s) => s.date === date)),
+    sessionsFor: (date: DateKey) => sessionsOn(data.sessions, date),
     /** Planned but not on a day yet. */
-    unscheduled: inOrder(data.sessions.filter((s) => s.date === null)),
+    unscheduled: sessionsOn(data.sessions, null),
     session: (id: string) => data.sessions.find((s) => s.id === id),
     templatesIn: (category: Category) => templates.filter((t) => t.category === category),
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),

@@ -1,7 +1,7 @@
 import { MAX_SETS, MEASURES, carriedForward, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
-import { instantiate, makeSets } from "@/data/schedule";
-import { newPrescription } from "@/data/templates";
+import { instantiate, makeSets, sessionsOn } from "@/data/schedule";
+import { newExercise, newPrescription, newTemplate } from "@/data/templates";
 import type {
   AppData,
   Category,
@@ -14,6 +14,7 @@ import type {
   WorkoutTemplate,
 } from "@/data/types";
 import type { DateKey } from "@/lib/dates";
+import { clamp } from "@/lib/math";
 
 export type Action =
   | { type: "hydrate"; data: AppData }
@@ -55,17 +56,11 @@ function mapSessionExercise(s: Session, id: string, fn: (e: SessionExercise) => 
   return { ...s, exercises: s.exercises.map((e) => (e.id === id ? fn(e) : e)) };
 }
 
-/** The sessions on a day (or Unscheduled for null), in their order. */
-function onDay(sessions: Session[], date: DateKey | null) {
-  return sessions.filter((s) => s.date === date).sort((a, b) => a.position - b.position);
-}
-
 /** Finds an exercise by name (case-insensitive) or adds it to the library. */
 function ensureExercise(state: AppData, name: string, category: Category, measure: Measure): [AppData, Exercise] {
   const existing = state.exercises.find((e) => e.name.toLowerCase() === name.trim().toLowerCase());
   if (existing) return [state, existing];
-  const ts = now();
-  const exercise: Exercise = { id: newId(), name: name.trim(), category, defaultMeasure: measure, createdAt: ts, updatedAt: ts };
+  const exercise = newExercise(name.trim(), category, measure);
   return [{ ...state, exercises: [...state.exercises, exercise] }, exercise];
 }
 
@@ -75,28 +70,21 @@ export function reducer(state: AppData, action: Action): AppData {
       return action.data;
 
     case "template/create": {
-      const ts = now();
       const name = `New ${categoryInfo(action.category).label}`;
-      const template: WorkoutTemplate = {
-        id: action.id,
-        category: action.category,
-        name,
-        // Each workout is exactly one exercise.
-        exercises: [newPrescription(defaultMeasure(action.category), { name })],
-        createdAt: ts,
-        updatedAt: ts,
-      };
+      const exercise = newPrescription(defaultMeasure(action.category), { name });
+      const template = newTemplate(action.category, name, exercise, action.id);
       return { ...state, templates: [...state.templates, template] };
     }
 
-    case "template/update":
+    case "template/update": {
+      const { name } = action.patch;
       return mapTemplate(state, action.id, (t) => ({
         ...t,
         ...action.patch,
         // The workout name is also its exercise's name (linked to the library on commit).
-        exercises:
-          action.patch.name !== undefined ? t.exercises.map((e) => ({ ...e, name: action.patch.name! })) : t.exercises,
+        exercises: name !== undefined ? t.exercises.map((e) => ({ ...e, name })) : t.exercises,
       }));
+    }
 
     case "template/delete":
       return mapTemplate(state, action.id, (t) => ({ ...t, deletedAt: now() }));
@@ -131,7 +119,7 @@ export function reducer(state: AppData, action: Action): AppData {
     case "session/schedule": {
       const template = state.templates.find((t) => t.id === action.templateId);
       if (!template) return state;
-      const position = Math.max(-1, ...onDay(state.sessions, action.date).map((s) => s.position)) + 1;
+      const position = Math.max(-1, ...sessionsOn(state.sessions, action.date).map((s) => s.position)) + 1;
       return {
         ...state,
         sessions: [...state.sessions, { ...instantiate(template, action.date, position), id: action.id }],
@@ -142,10 +130,10 @@ export function reducer(state: AppData, action: Action): AppData {
       const moving = state.sessions.find((s) => s.id === action.id);
       if (!moving) return state;
       // Renumber the day it lands on (with it slotted in) and the day it left, so both stay 0, 1, 2…
-      const target = onDay(state.sessions, action.date).filter((s) => s.id !== moving.id);
-      const index = Math.min(Math.max(action.index ?? target.length, 0), target.length);
+      const target = sessionsOn(state.sessions, action.date).filter((s) => s.id !== moving.id);
+      const index = clamp(action.index ?? target.length, 0, target.length);
       target.splice(index, 0, moving);
-      const source = moving.date === action.date ? [] : onDay(state.sessions, moving.date).filter((s) => s.id !== moving.id);
+      const source = moving.date === action.date ? [] : sessionsOn(state.sessions, moving.date).filter((s) => s.id !== moving.id);
       const positions = new Map<string, number>();
       target.forEach((s, i) => positions.set(s.id, i));
       source.forEach((s, i) => positions.set(s.id, i));
