@@ -8,9 +8,9 @@ import { SetButtons } from "@/components/workout/set-list";
 import { SetHeader, SetRow } from "@/components/workout/set-row";
 import { borders, colors, space } from "@/constants/theme";
 import { MAX_SETS, MEASURES, type FieldSpec } from "@/data/categories";
-import { formatClock, formatPrescription, formatWeight } from "@/data/format";
-import type { TimerStep } from "@/data/timer-steps";
-import type { Session, SessionExercise, SetLog, SetValues } from "@/data/types";
+import { formatClock, formatPrescription } from "@/data/format";
+import { stepCaption } from "@/data/timer-steps";
+import type { Session, SessionExercise, SetValues } from "@/data/types";
 import { useWorkoutTimer } from "@/hooks/use-workout-timer";
 import { useLog } from "@/store/log";
 
@@ -49,7 +49,7 @@ function WorkoutTimer({ session, exercise }: { session: Session; exercise: Sessi
         </AppText>
         {current && set && (
           <AppText variant="label" align="center">
-            {caption(current, set, fields)}
+            {stepCaption(current, set, fields)}
           </AppText>
         )}
       </Box>
@@ -172,21 +172,4 @@ function TimerSetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemove
       />
     </Box>
   );
-}
-
-/** Line under the clock: "Set 2 · 6 reps · +25 lb", "Set 1 · Hang 3/6 · On", "Rest · Set 3 next". */
-function caption(step: TimerStep, set: SetLog, fields: FieldSpec[]) {
-  if (step.kind === "rest") return `Rest · Set ${step.setNumber + 1} next`;
-  const parts = [`Set ${step.setNumber}`];
-  if (step.hang) {
-    parts.push(`Hang ${step.hang.index}/${step.hang.of}`, step.hang.phase === "on" ? "On" : "Off");
-  } else {
-    for (const f of fields) {
-      const key = f.key as keyof SetValues;
-      const v = set.planned[key] ?? set.actual[key];
-      if (!v) continue;
-      parts.push(key === "weightLb" ? formatWeight(v) : key === "seconds" ? "Hold" : `${v} ${f.unit}`);
-    }
-  }
-  return parts.join(" · ");
 }

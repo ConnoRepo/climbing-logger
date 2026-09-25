@@ -8,6 +8,7 @@
     "scheme": "climbingapp",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.connorhruby.climbingapp",
       "icon": "./assets/expo.icon"
     },
     "android": {
@@ -31,6 +32,21 @@
           "backgroundColor": "#208AEF",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-widgets",
+        {
+          "groupIdentifier": "group.com.connorhruby.climbingapp",
+          "frequentUpdates": true
         }
       ]
     ],

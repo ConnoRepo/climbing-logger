@@ -1,4 +1,6 @@
-import type { SessionExercise } from "./types";
+import type { FieldSpec } from "./categories";
+import { formatWeight } from "./format";
+import type { SessionExercise, SetLog, SetValues } from "./types";
 
 /**
  * One thing the workout timer walks through: a set, a repeater hang, or a rest.
@@ -70,4 +72,21 @@ export function stepRows(steps: TimerStep[]): StepRow[] {
     else rows.push({ key: `${s.kind}:${s.setId}`, kind: s.kind, setId: s.setId, setNumber: s.setNumber, stepKeys: [s.key] });
   }
   return rows;
+}
+
+/** Line under the clock: "Set 2 · 6 reps · +25 lb", "Set 1 · Hang 3/6 · On", "Rest · Set 3 next". */
+export function stepCaption(step: TimerStep, set: SetLog, fields: FieldSpec[]) {
+  if (step.kind === "rest") return `Rest · Set ${step.setNumber + 1} next`;
+  const parts = [`Set ${step.setNumber}`];
+  if (step.hang) {
+    parts.push(`Hang ${step.hang.index}/${step.hang.of}`, step.hang.phase === "on" ? "On" : "Off");
+  } else {
+    for (const f of fields) {
+      const key = f.key as keyof SetValues;
+      const v = set.planned[key] ?? set.actual[key];
+      if (!v) continue;
+      parts.push(key === "weightLb" ? formatWeight(v) : key === "seconds" ? "Hold" : `${v} ${f.unit}`);
+    }
+  }
+  return parts.join(" · ");
 }

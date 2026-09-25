@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { useEffect, useRef, useState } from "react";
 import type { LayoutRectangle } from "react-native";
 import { Gesture } from "react-native-gesture-handler";
@@ -181,11 +182,15 @@ export function useSessionDrag(
     track(y, next);
   }, false);
 
+  // A firm tap as a workout lifts off the page, and a softer one as it lands:
+  // dropped in place, or back where it came from.
   const begin = (id: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setDragging(id);
     autoscroll.setActive(true);
   };
   const end = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     autoscroll.setActive(false);
     setDragging(null);
   };
