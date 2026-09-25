@@ -76,7 +76,10 @@ type SetButtonsProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-/** − Set / + Set under a list of sets; each is faded out while it can't be used. */
+/**
+ * − Set / + Set under a list of sets; each is faded out while it can't be used.
+ * Like the iOS stepper, they act the moment a finger touches down, not on release.
+ */
 export function SetButtons({ canAdd, canRemove, onAdd, onRemove, style }: SetButtonsProps) {
   return (
     <View style={[{ flexDirection: "row", justifyContent: "space-between" }, style]}>
@@ -85,14 +88,14 @@ export function SetButtons({ canAdd, canRemove, onAdd, onRemove, style }: SetBut
         accessibilityLabel="Remove last set"
         disabled={!canRemove}
         style={{ width: 72, opacity: canRemove ? 1 : 0.35 }}
-        onPress={onRemove}
+        onPressIn={onRemove}
       />
       <Button
         label="+ Set"
         accessibilityLabel="Add a set"
         disabled={!canAdd}
         style={{ width: 72, opacity: canAdd ? 1 : 0.35 }}
-        onPress={onAdd}
+        onPressIn={onAdd}
       />
     </View>
   );

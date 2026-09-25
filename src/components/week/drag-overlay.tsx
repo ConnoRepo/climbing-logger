@@ -1,4 +1,4 @@
-import Animated, { useAnimatedStyle, type SharedValue } from "react-native-reanimated";
+import Animated, { interpolate, useAnimatedStyle, type SharedValue } from "react-native-reanimated";
 
 import { Box, LIST_SIDE } from "@/components/ui";
 import { borders, colors } from "@/constants/theme";
@@ -31,18 +31,29 @@ export function DropLine({ y, scrollY }: { y: SharedValue<number>; scrollY: Shar
   );
 }
 
-/** The held workout, lifted off the page: follows the finger over an ink shadow. */
-export function LiftedCopy({
-  session,
-  x,
-  y,
-}: {
+/** How big the held copy gets, relative to its row: smaller, so the rows it passes stay in view. */
+const LIFTED_SCALE = 0.8;
+
+type LiftedCopyProps = {
   session: Session;
   x: SharedValue<number>;
   y: SharedValue<number>;
-}) {
+  /** Where the finger took hold, within the row; the copy grows or shrinks around that point. */
+  grabX: SharedValue<number>;
+  grabY: SharedValue<number>;
+  /** 0 = row size, 1 = fully lifted. */
+  lift: SharedValue<number>;
+};
+
+/** The held workout, lifted off the page: follows the finger over an ink shadow. */
+export function LiftedCopy({ session, x, y, grabX, grabY, lift }: LiftedCopyProps) {
   const style = useAnimatedStyle(() => ({
-    transform: [{ translateX: x.value }, { translateY: y.value }, { scale: 1.03 }],
+    transformOrigin: [grabX.value, grabY.value, 0],
+    transform: [
+      { translateX: x.value },
+      { translateY: y.value },
+      { scale: interpolate(lift.value, [0, 1], [1, LIFTED_SCALE]) },
+    ],
   }));
 
   return (

@@ -6,15 +6,16 @@ import { AppText, Button, LIST_SIDE, WorkoutRow } from "@/components/ui";
 import { SHEET_SIDE, SheetBack, SquareButton } from "@/components/workout/sheet-parts";
 import { colors, space } from "@/constants/theme";
 import { categoryInfo, isCategory } from "@/data/categories";
-import { formatPrescription } from "@/data/format";
+import { formatSummary } from "@/data/format";
 import { templateExercise } from "@/data/templates";
 import type { WorkoutTemplate } from "@/data/types";
 import { formatDayHeader } from "@/lib/dates";
 import { useLog } from "@/store/log";
 
+/** Sets, reps and length, so the whole thing fits on the row's one subtitle line. */
 function summary(t: WorkoutTemplate) {
   const exercise = templateExercise(t);
-  return exercise ? formatPrescription(exercise) : "";
+  return exercise ? formatSummary(exercise) : "";
 }
 
 export default function CategoryTemplates() {

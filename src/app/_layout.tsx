@@ -4,11 +4,16 @@ import type { NativeStackNavigationOptions } from "expo-router/native-stack";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { enableFreeze } from "react-native-screens";
 
 import { colors, fonts, radii } from "@/constants/theme";
 import { LogProvider, useLog } from "@/store/log";
 
 SplashScreen.preventAutoHideAsync();
+
+// Screens out of view (the home list under a workout, the workout under its timer) skip
+// re-rendering on every edit and catch up when shown again, so taps stay quick.
+enableFreeze(true);
 
 const sheet: NativeStackNavigationOptions = {
   presentation: "formSheet",

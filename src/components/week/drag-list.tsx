@@ -22,7 +22,7 @@ type DragListProps = {
  * scroll view it autoscrolls, and the drop line and lifted copy drawn while a workout is held.
  */
 export function DragList({ drag, contentContainerStyle, children }: DragListProps) {
-  const { viewportRef, scrollRef, scrollY, contentHeight, lineY, ghostX, ghostY, dragging } = drag;
+  const { viewportRef, scrollRef, scrollY, contentHeight, lineY, ghostX, ghostY, grabX, grabY, lift, dragging } = drag;
   const log = useLog();
   const lifted = dragging ? log.session(dragging) : undefined;
 
@@ -43,7 +43,7 @@ export function DragList({ drag, contentContainerStyle, children }: DragListProp
       </GestureDetector>
 
       {lifted && <DropLine y={lineY} scrollY={scrollY} />}
-      {lifted && <LiftedCopy session={lifted} x={ghostX} y={ghostY} />}
+      {lifted && <LiftedCopy session={lifted} x={ghostX} y={ghostY} grabX={grabX} grabY={grabY} lift={lift} />}
     </Animated.View>
   );
 }

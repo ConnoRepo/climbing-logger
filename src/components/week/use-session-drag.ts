@@ -125,7 +125,10 @@ export function useSessionDrag(
   const active = useSharedValue(false);
   const viewTop = useSharedValue(0);
   const viewHeight = useSharedValue(0);
+  const grabX = useSharedValue(0);
   const grabY = useSharedValue(0);
+  /** 0 → 1 as a row lifts off the page; back to 0 as it floats home. */
+  const lift = useSharedValue(0);
   /** Where the picked-up row's top was, in content coordinates, to float back to. */
   const originY = useSharedValue(0);
   const fingerY = useSharedValue(0);
@@ -216,7 +219,10 @@ export function useSessionDrag(
         const y = e.absoluteY - view.pageY;
         viewTop.set(view.pageY);
         viewHeight.set(view.height);
+        grabX.set(e.x);
         grabY.set(e.y);
+        lift.set(0);
+        lift.set(withTiming(1, { duration: 150 }));
         fingerY.set(y);
         ghostX.set(0);
         ghostY.set(y - e.y);
@@ -247,6 +253,7 @@ export function useSessionDrag(
         } else {
           // Nowhere to drop: float back to where it was picked up.
           ghostX.set(withTiming(0, { duration: 200 }));
+          lift.set(withTiming(0, { duration: 200 }));
           ghostY.set(withTiming(originY.value - scrollY.value, { duration: 200 }, () => scheduleOnRN(end)));
         }
       });
@@ -260,6 +267,9 @@ export function useSessionDrag(
     hover,
     ghostX,
     ghostY,
+    grabX,
+    grabY,
+    lift,
     dragging,
     registerZone,
     registerRow,
