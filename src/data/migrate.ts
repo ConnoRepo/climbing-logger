@@ -1,5 +1,5 @@
 import { withSingleExercise } from "./templates";
-import type { AppData, Prescription, SetValues } from "./types";
+import type { AppData, Prescription, Session, SetValues } from "./types";
 
 /**
  * Upgrades saved data to the current shape. Pure, so the same code can run
@@ -11,6 +11,7 @@ export function migrate(data: AppData, fromVersion: number): AppData {
   // v1 → v2: every workout is exactly one exercise.
   if (fromVersion < 2) next = { ...next, templates: next.templates.map(withSingleExercise) };
   // v2 → v3: weight is stored in pounds (weightKg → weightLb).
+  // (v3 also allows session.date === null for unscheduled workouts; old data needs no rewrite.)
   if (fromVersion < 3) {
     next = {
       ...next,
@@ -23,6 +24,18 @@ export function migrate(data: AppData, fromVersion: number): AppData {
           sets: e.sets.map((set) => ({ ...set, planned: toPounds(set.planned), actual: toPounds(set.actual) })),
         })),
       })),
+    };
+  }
+  // v3 → v4: sessions carry their order within a day, starting from how they were saved.
+  if (fromVersion < 4) {
+    const counts = new Map<string | null, number>();
+    next = {
+      ...next,
+      sessions: next.sessions.map((s): Session => {
+        const position = counts.get(s.date) ?? 0;
+        counts.set(s.date, position + 1);
+        return { ...s, position };
+      }),
     };
   }
   return next;

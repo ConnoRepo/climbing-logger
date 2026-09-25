@@ -26,11 +26,12 @@ export function makeSessionExercise(p: Prescription, position: number): SessionE
  * Schedules a template on a day. The session is a full copy: editing the
  * template afterwards never changes it, so completed sessions are history.
  */
-export function instantiate(template: WorkoutTemplate, date: DateKey): Session {
+export function instantiate(template: WorkoutTemplate, date: DateKey | null, position = 0): Session {
   const ts = now();
   return {
     id: newId(),
     date,
+    position,
     templateId: template.id,
     category: template.category,
     name: template.name,

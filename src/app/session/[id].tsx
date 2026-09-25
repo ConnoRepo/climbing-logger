@@ -32,7 +32,7 @@ export default function SessionScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
-      <Stack.Screen options={{ title: formatShortDate(session.date) }} />
+      <Stack.Screen options={{ title: session.date ? formatShortDate(session.date) : "Unscheduled" }} />
 
       <ScrollView
         style={{ flex: 1 }}

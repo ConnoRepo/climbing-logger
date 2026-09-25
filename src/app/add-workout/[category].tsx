@@ -18,8 +18,10 @@ function summary(t: WorkoutTemplate) {
 }
 
 export default function CategoryTemplates() {
-  const { category } = useLocalSearchParams<{ category: string }>();
+  const { category, target } = useLocalSearchParams<{ category: string; target?: string }>();
   const { templatesIn, schedule, createTemplate, selectedDate } = useLog();
+  // From the weekly view, workouts go to Unscheduled to be placed on days afterwards.
+  const date = target === "unscheduled" ? null : selectedDate;
   const [added, setAdded] = useState<Record<string, number>>({});
 
   if (!isCategory(category)) return null;
@@ -28,7 +30,7 @@ export default function CategoryTemplates() {
   const openTemplate = (id: string) => router.push({ pathname: "/template/[id]", params: { id } });
 
   function add(t: WorkoutTemplate) {
-    schedule(t.id, selectedDate);
+    schedule(t.id, date);
     setAdded((prev) => ({ ...prev, [t.id]: (prev[t.id] ?? 0) + 1 }));
   }
 
@@ -56,7 +58,7 @@ export default function CategoryTemplates() {
                 {t.name}
               </AppText>
               <AppText variant="note" color={colors.placeholder} numberOfLines={2}>
-                {added[t.id] ? `Added to ${formatDayHeader(selectedDate)}` : summary(t)}
+                {added[t.id] ? `Added to ${date ? formatDayHeader(date) : "Unscheduled"}` : summary(t)}
               </AppText>
             </View>
           </Pressable>

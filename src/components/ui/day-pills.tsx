@@ -1,6 +1,6 @@
 import { Pills } from "./pills";
 
-export const DAYS = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"] as const;
+export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thur", "Fri", "Sat"] as const;
 
 const OPTIONS = DAYS.map((label, i) => ({ value: String(i), label }));
 

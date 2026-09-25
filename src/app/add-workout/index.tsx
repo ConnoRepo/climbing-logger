@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Pressable, ScrollView } from "react-native";
 
 import { AppText, Icon } from "@/components/ui";
@@ -7,7 +7,10 @@ import { colors, space } from "@/constants/theme";
 import { CATEGORIES } from "@/data/categories";
 
 export default function AddWorkoutCategories() {
-  const open = (category: string) => router.push({ pathname: "/add-workout/[category]", params: { category } });
+  // "unscheduled" when opened from the weekly view; passed on to the workout list.
+  const { target } = useLocalSearchParams<{ target?: string }>();
+  const open = (category: string) =>
+    router.push({ pathname: "/add-workout/[category]", params: { category, ...(target ? { target } : {}) } });
 
   return (
     <ScrollView

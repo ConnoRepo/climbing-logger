@@ -4,10 +4,12 @@ import { newId } from "@/data/ids";
 import { SHOW_FAKE_POINTS, weightHistory, withFakePoints } from "@/data/progress";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
-import type { AppData, Category, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
+import type { AppData, Category, Prescription, Session, SetValues, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
+
+const inOrder = (sessions: Session[]) => sessions.sort((a, b) => a.position - b.position);
 
 const EMPTY: AppData = { exercises: [], templates: [], sessions: [], journal: {} };
 const SAVE_DELAY_MS = 400;
@@ -39,7 +41,9 @@ function useLogState() {
     selectDate,
 
     // Reads
-    sessionsFor: (date: DateKey) => data.sessions.filter((s) => s.date === date),
+    sessionsFor: (date: DateKey) => inOrder(data.sessions.filter((s) => s.date === date)),
+    /** Planned but not on a day yet. */
+    unscheduled: inOrder(data.sessions.filter((s) => s.date === null)),
     session: (id: string) => data.sessions.find((s) => s.id === id),
     templatesIn: (category: Category) => templates.filter((t) => t.category === category),
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
@@ -62,12 +66,16 @@ function useLogState() {
       dispatch({ type: "template/updateExercise", templateId, exerciseId, patch }),
 
     // Sessions
-    schedule: (templateId: string, date: DateKey) => {
+    /** Adds a copy of the template to a day, or to Unscheduled when `date` is null. */
+    schedule: (templateId: string, date: DateKey | null) => {
       const id = newId();
       dispatch({ type: "session/schedule", id, templateId, date });
       return id;
     },
     removeSession: (id: string) => dispatch({ type: "session/remove", id }),
+    /** Moves a session to a day (or back to Unscheduled with null), at `index` there or at the end. */
+    moveSession: (id: string, date: DateKey | null, index?: number) =>
+      dispatch({ type: "session/move", id, date, index }),
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
     setRest: (sessionId: string, exerciseId: string, restSeconds: number) =>
       dispatch({ type: "session/setRest", sessionId, exerciseId, restSeconds }),

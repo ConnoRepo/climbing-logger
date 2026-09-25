@@ -12,7 +12,7 @@ export type WeightPoint = { date: DateKey; weightLb: number };
 export function weightHistory(sessions: Session[], templateId: string): WeightPoint[] {
   const byDate = new Map<DateKey, number>();
   for (const s of sessions) {
-    if (s.templateId !== templateId) continue;
+    if (s.templateId !== templateId || s.date === null) continue;
     const done = s.exercises.flatMap((e) => e.sets).filter((set) => set.done);
     if (done.length === 0) continue;
     const heaviest = Math.max(...done.map((set) => set.actual.weightLb ?? 0));

@@ -1,4 +1,4 @@
-import type { Prescription } from "./types";
+import type { Prescription, Session } from "./types";
 
 export function formatSeconds(total: number) {
   if (total < 60) return `${total}s`;
@@ -41,4 +41,11 @@ export function formatPrescription(p: Prescription) {
   if (p.weightLb) parts.push(formatWeight(p.weightLb));
   if (p.restSeconds) parts.push(`${formatSeconds(p.restSeconds)} rest`);
   return parts.join(" · ");
+}
+
+/** "3/5 sets", or nothing for a workout with no sets. */
+export function sessionProgress(s: Session) {
+  const sets = s.exercises.flatMap((e) => e.sets);
+  if (sets.length === 0) return undefined;
+  return `${sets.filter((set) => set.done).length}/${sets.length} sets`;
 }

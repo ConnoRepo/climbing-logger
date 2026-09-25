@@ -85,7 +85,10 @@ export type SessionExercise = {
 /** A template added to a day: a full copy, edited independently from then on. */
 export type Session = Timestamps & {
   id: string;
-  date: DateKey;
+  /** The day it's on, or null while it's Unscheduled (planned for the week, not on a day yet). */
+  date: DateKey | null;
+  /** Order among the sessions on the same day (or in Unscheduled); lowest first. */
+  position: number;
   templateId: string | null;
   category: Category;
   name: string;

@@ -50,11 +50,26 @@ export function formatShortDate(key: DateKey) {
   return `${MONTHS[date.getMonth()]}, ${ordinal(date.getDate())}`;
 }
 
-/** The Monday-to-Sunday week containing `key`. */
+/** The Sunday-to-Saturday week containing `key`. */
 export function weekOf(key: DateKey): DateKey[] {
   const date = fromKey(key);
-  const mondayOffset = (date.getDay() + 6) % 7;
+  const sundayOffset = date.getDay();
   return Array.from({ length: 7 }, (_, i) =>
-    toKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() - mondayOffset + i)),
+    toKey(new Date(date.getFullYear(), date.getMonth(), date.getDate() - sundayOffset + i)),
   );
+}
+
+/** One letter per day, Sunday first: the week view's day markers. */
+export const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"] as const;
+
+/** "Sunday" */
+export function weekdayName(key: DateKey) {
+  return WEEKDAYS[fromKey(key).getDay()];
+}
+
+/** "Sep 20 – 26", or "Sep 27 – Oct 3" when the week crosses a month. */
+export function formatWeekRange(week: DateKey[]) {
+  const [first, last] = [fromKey(week[0]), fromKey(week[week.length - 1])];
+  const end = first.getMonth() === last.getMonth() ? `${last.getDate()}` : `${MONTHS[last.getMonth()]} ${last.getDate()}`;
+  return `${MONTHS[first.getMonth()]} ${first.getDate()} – ${end}`;
 }

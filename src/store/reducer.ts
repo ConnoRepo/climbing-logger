@@ -23,7 +23,9 @@ export type Action =
   | { type: "template/delete"; id: string }
   | { type: "template/updateExercise"; templateId: string; exerciseId: string; patch: Partial<Prescription> }
   // Sessions
-  | { type: "session/schedule"; id: string; templateId: string; date: DateKey }
+  | { type: "session/schedule"; id: string; templateId: string; date: DateKey | null }
+  /** To a day (or Unscheduled with null), at `index` among its other sessions; the end if omitted. */
+  | { type: "session/move"; id: string; date: DateKey | null; index?: number }
   | { type: "session/remove"; id: string }
   | { type: "session/setDone"; id: string; done: boolean }
   | { type: "session/setRest"; sessionId: string; exerciseId: string; restSeconds: number }
@@ -51,6 +53,11 @@ function mapSession(state: AppData, id: string, fn: (s: Session) => Session): Ap
 
 function mapSessionExercise(s: Session, id: string, fn: (e: SessionExercise) => SessionExercise): Session {
   return { ...s, exercises: s.exercises.map((e) => (e.id === id ? fn(e) : e)) };
+}
+
+/** The sessions on a day (or Unscheduled for null), in their order. */
+function onDay(sessions: Session[], date: DateKey | null) {
+  return sessions.filter((s) => s.date === date).sort((a, b) => a.position - b.position);
 }
 
 /** Finds an exercise by name (case-insensitive) or adds it to the library. */
@@ -123,7 +130,34 @@ export function reducer(state: AppData, action: Action): AppData {
     case "session/schedule": {
       const template = state.templates.find((t) => t.id === action.templateId);
       if (!template) return state;
-      return { ...state, sessions: [...state.sessions, { ...instantiate(template, action.date), id: action.id }] };
+      const position = Math.max(-1, ...onDay(state.sessions, action.date).map((s) => s.position)) + 1;
+      return {
+        ...state,
+        sessions: [...state.sessions, { ...instantiate(template, action.date, position), id: action.id }],
+      };
+    }
+
+    case "session/move": {
+      const moving = state.sessions.find((s) => s.id === action.id);
+      if (!moving) return state;
+      // Renumber the day it lands on (with it slotted in) and the day it left, so both stay 0, 1, 2…
+      const target = onDay(state.sessions, action.date).filter((s) => s.id !== moving.id);
+      const index = Math.min(Math.max(action.index ?? target.length, 0), target.length);
+      target.splice(index, 0, moving);
+      const source = moving.date === action.date ? [] : onDay(state.sessions, moving.date).filter((s) => s.id !== moving.id);
+      const positions = new Map<string, number>();
+      target.forEach((s, i) => positions.set(s.id, i));
+      source.forEach((s, i) => positions.set(s.id, i));
+      const ts = now();
+      return {
+        ...state,
+        sessions: state.sessions.map((s) => {
+          const position = positions.get(s.id);
+          const date = s.id === moving.id ? action.date : s.date;
+          if (position === undefined || (position === s.position && date === s.date)) return s;
+          return { ...s, date, position, updatedAt: ts };
+        }),
+      };
     }
 
     case "session/remove":
