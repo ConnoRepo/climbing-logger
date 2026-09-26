@@ -14,18 +14,23 @@ type StepperProps = {
   max?: number;
   /** Used for accessibility labels, e.g. "reps". */
   label: string;
-  /** large: the timer's current set. */
-  size?: "regular" | "large";
+  /** large: the timer's current set. compact: three to a row; fills its column. */
+  size?: "regular" | "large" | "compact";
 };
 
-/** Button side and value width; a regular stepper is 104 wide, a large one 112. */
+/**
+ * Height, button width and value width; a regular stepper is 104 wide, a large one 112.
+ * A compact one is as tall as a regular one, with narrower buttons and a value that
+ * stretches to fill whatever room is left.
+ */
 const SIZES = {
-  regular: { button: 30, input: 44, text: type.button },
-  large: { button: 32, input: 48, text: type.label },
+  regular: { height: 30, button: 30, input: 44, text: type.button },
+  large: { height: 32, button: 32, input: 48, text: type.label },
+  compact: { height: 30, button: 22, input: undefined, text: type.note },
 } as const;
 
-/** Height of a regular stepper, for laying out rows of them. */
-export const STEPPER_HEIGHT = SIZES.regular.button;
+/** Height of a regular (or compact) stepper, for laying out rows of them. */
+export const STEPPER_HEIGHT = SIZES.regular.height;
 
 function round(n: number) {
   return Math.round(n * 100) / 100;
@@ -34,6 +39,7 @@ function round(n: number) {
 /** Outlined − value + control; the value can also be typed. */
 export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label, size = "regular" }: StepperProps) {
   const s = SIZES[size];
+  const stretch = size === "compact";
   const current = value ?? 0;
   const [text, setText] = useState(String(current));
 
@@ -53,8 +59,8 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label,
   }
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center" }}>
-      <StepButton symbol="−" label={`Decrease ${label}`} side={s.button} onPress={() => set(current - step)} />
+    <View style={{ flexDirection: "row", alignItems: "center", alignSelf: stretch ? "stretch" : undefined }}>
+      <StepButton symbol="−" label={`Decrease ${label}`} width={s.button} height={s.height} onPress={() => set(current - step)} />
       <TextInput
         accessibilityLabel={label}
         value={text}
@@ -67,7 +73,9 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label,
           s.text,
           {
             width: s.input,
-            height: s.button,
+            flex: stretch ? 1 : undefined,
+            minWidth: stretch ? 0 : undefined,
+            height: s.height,
             padding: 0,
             textAlign: "center",
             color: colors.ink,
@@ -78,12 +86,14 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label,
           },
         ]}
       />
-      <StepButton symbol="+" label={`Increase ${label}`} side={s.button} onPress={() => set(current + step)} />
+      <StepButton symbol="+" label={`Increase ${label}`} width={s.button} height={s.height} onPress={() => set(current + step)} />
     </View>
   );
 }
 
-function StepButton({ symbol, label, side, onPress }: { symbol: string; label: string; side: number; onPress: () => void }) {
+type StepButtonProps = { symbol: string; label: string; width: number; height: number; onPress: () => void };
+
+function StepButton({ symbol, label, width, height, onPress }: StepButtonProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -91,8 +101,8 @@ function StepButton({ symbol, label, side, onPress }: { symbol: string; label: s
       onPress={onPress}
       hitSlop={4}
       style={({ pressed }) => ({
-        width: side,
-        height: side,
+        width,
+        height,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: borders.thin,

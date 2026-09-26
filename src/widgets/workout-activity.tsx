@@ -13,6 +13,10 @@ export type WorkoutActivityProps = {
   endsAt?: number;
   /** Paused: time left, frozen on the clock. */
   pausedLeftMs?: number;
+  /** Stopwatch sessions count up instead. Running: when the clock would have read 0:00. */
+  countUpFrom?: number;
+  /** Stopwatch paused: time on the clock, frozen. */
+  pausedElapsedMs?: number;
 };
 
 /**
@@ -29,7 +33,15 @@ const WorkoutActivity = (props: WorkoutActivityProps, environment: LiveActivityE
 
   let interval: { lower: Date; upper: Date } | undefined;
   let pauseTime: Date | undefined;
-  if (props.stepMs !== undefined && props.pausedLeftMs !== undefined) {
+  // A count-up clock runs from `lower`; `upper` is just far enough out (a day) never to be reached.
+  const countsUp = props.countUpFrom !== undefined || props.pausedElapsedMs !== undefined;
+  if (props.pausedElapsedMs !== undefined) {
+    pauseTime = new Date();
+    const lower = pauseTime.getTime() - props.pausedElapsedMs;
+    interval = { lower: new Date(lower), upper: new Date(lower + 86400000) };
+  } else if (props.countUpFrom !== undefined) {
+    interval = { lower: new Date(props.countUpFrom), upper: new Date(props.countUpFrom + 86400000) };
+  } else if (props.stepMs !== undefined && props.pausedLeftMs !== undefined) {
     // Frozen: the clock shows upper − pauseTime.
     pauseTime = new Date();
     const upper = pauseTime.getTime() + props.pausedLeftMs;
@@ -42,7 +54,7 @@ const WorkoutActivity = (props: WorkoutActivityProps, environment: LiveActivityE
     interval ? (
       <Text
         timerInterval={interval}
-        countsDown
+        countsDown={!countsUp}
         pauseTime={pauseTime}
         modifiers={[font({ size, weight: "bold" }), monospacedDigit(), ...(maxWidth ? [frame({ maxWidth })] : [])]}
       />

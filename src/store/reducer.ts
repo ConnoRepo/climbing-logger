@@ -1,6 +1,7 @@
 import { MAX_SETS, MEASURES, carriedForward, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
 import { instantiate, makeSets, sessionsOn } from "@/data/schedule";
+import { isStopwatch, stopClock, withSet } from "@/data/stopwatch";
 import { newExercise, newPrescription, newTemplate } from "@/data/templates";
 import type {
   AppData,
@@ -30,6 +31,8 @@ export type Action =
   | { type: "session/remove"; id: string }
   | { type: "session/setDone"; id: string; done: boolean }
   | { type: "session/setRest"; sessionId: string; exerciseId: string; restSeconds: number }
+  // Stopwatch sessions
+  | { type: "stopwatch/start" | "stopwatch/pause" | "stopwatch/finish"; sessionId: string }
   | { type: "set/add"; sessionId: string; exerciseId: string }
   | { type: "set/remove"; sessionId: string; exerciseId: string; setId: string }
   | { type: "set/update"; sessionId: string; exerciseId: string; setId: string; actual?: SetValues; done?: boolean }
@@ -153,11 +156,29 @@ export function reducer(state: AppData, action: Action): AppData {
       return { ...state, sessions: state.sessions.filter((s) => s.id !== action.id) };
 
     case "session/setDone":
-      return mapSession(state, action.id, (s) => ({
-        ...s,
-        status: action.done ? "done" : "planned",
-        completedAt: action.done ? now() : undefined,
-      }));
+      return mapSession(state, action.id, (s) => {
+        const next: Session = { ...s, status: action.done ? "done" : "planned", completedAt: action.done ? now() : undefined };
+        // Ticking off a stopwatch session stops its clock and logs the time (unticking takes it off the graph).
+        return isStopwatch(s) ? withSet(stopClock(next, now()), (set) => ({ ...set, done: action.done })) : next;
+      });
+
+    // A finished session can be started again: it carries on from the time it logged.
+    case "stopwatch/start":
+      return mapSession(state, action.sessionId, (s) =>
+        s.runningSince
+          ? s
+          : withSet(s, (set) => ({ ...set, done: false }), { runningSince: now(), status: "planned", completedAt: undefined }),
+      );
+
+    case "stopwatch/pause":
+      return mapSession(state, action.sessionId, (s) => stopClock(s, now()));
+
+    case "stopwatch/finish": {
+      const ts = now();
+      return mapSession(state, action.sessionId, (s) =>
+        withSet(stopClock(s, ts), (set) => ({ ...set, done: true }), { status: "done", completedAt: ts }),
+      );
+    }
 
     case "session/setRest":
       return mapSession(state, action.sessionId, (s) =>
@@ -191,7 +212,7 @@ export function reducer(state: AppData, action: Action): AppData {
         mapSessionExercise(s, action.exerciseId, (e) => {
           const target = e.sets.find((set) => set.id === action.setId);
           if (!target) return e;
-          // New reps or weight carry forward to every later set (and so to sets added later,
+          // New reps, time or weight carry forward to every later set (and so to sets added later,
           // which copy the last one); earlier sets keep what they were.
           const carried = carriedForward(action.actual);
           return {

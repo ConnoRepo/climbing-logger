@@ -8,9 +8,12 @@ import { SetButtons } from "@/components/workout/set-list";
 import { SetHeader, SetRow } from "@/components/workout/set-row";
 import { borders, colors, space } from "@/constants/theme";
 import { MAX_SETS, MEASURES, type FieldSpec } from "@/data/categories";
-import { formatClock, formatPrescription } from "@/data/format";
+import { formatClock, formatElapsed, formatPrescription } from "@/data/format";
+import { isStopwatch, stopwatchSet } from "@/data/stopwatch";
 import { stepCaption } from "@/data/timer-steps";
 import type { Session, SessionExercise, SetValues } from "@/data/types";
+import { useLiveActivity } from "@/hooks/use-live-activity";
+import { useStopwatch } from "@/hooks/use-stopwatch";
 import { useWorkoutTimer } from "@/hooks/use-workout-timer";
 import { useLog } from "@/store/log";
 
@@ -27,7 +30,63 @@ export default function TimerScreen() {
       </AppText>
     );
   }
-  return <WorkoutTimer session={session} exercise={exercise} />;
+  return isStopwatch(session) ? <StopwatchTimer session={session} /> : <WorkoutTimer session={session} exercise={exercise} />;
+}
+
+/** An open-ended session: one clock counting up, until Finish logs its time. */
+function StopwatchTimer({ session }: { session: Session }) {
+  const log = useLog();
+  const { bottom } = useSafeAreaInsets();
+  const { running, elapsedMs } = useStopwatch(session);
+
+  // The user tapped Start (or Continue) to get here, so the clock starts right away.
+  useEffect(() => {
+    if (!session.runningSince) log.startStopwatch(session.id);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // iOS runs the Lock Screen clock itself, so it only hears about starts and pauses:
+  // running, it counts from when the clock would have read 0:00.
+  const counted = (stopwatchSet(session)?.actual.seconds ?? 0) * 1000;
+  const clock = session.runningSince
+    ? { countUpFrom: Date.parse(session.runningSince) - counted }
+    : { pausedElapsedMs: counted };
+  useLiveActivity(
+    { title: session.name, caption: running ? "Session running" : "Paused", ...clock },
+    `climbingapp://timer/${session.id}`,
+  );
+
+  function finish() {
+    log.finishStopwatch(session.id);
+    router.dismissTo("/");
+  }
+
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 15, paddingBottom: Math.max(bottom, space.md), gap: space.md }}>
+      <Stack.Screen options={{ title: session.name }} />
+
+      <Box fill={running ? "go" : "fill"} style={{ height: 169, alignItems: "center", justifyContent: "center" }}>
+        <AppText variant="display" style={{ fontVariant: ["tabular-nums"] }}>
+          {formatElapsed(elapsedMs)}
+        </AppText>
+        <AppText variant="label" align="center">
+          {running ? "Running" : "Paused"}
+        </AppText>
+      </Box>
+
+      <View style={{ flex: 1 }} />
+
+      <View style={{ flexDirection: "row", justifyContent: "space-evenly", paddingHorizontal: 12 }}>
+        <Button
+          label={running ? "Pause" : "Resume"}
+          variant="fill"
+          textVariant="label"
+          style={[CONTROL, { width: 140 }]}
+          onPress={() => (running ? log.pauseStopwatch(session.id) : log.startStopwatch(session.id))}
+        />
+        <Button label="Finish" variant="fill" textVariant="label" style={[CONTROL, { width: 140 }]} onPress={finish} />
+      </View>
+    </View>
+  );
 }
 
 function WorkoutTimer({ session, exercise }: { session: Session; exercise: SessionExercise }) {
@@ -131,12 +190,14 @@ function TimerSetList({ timer, exercise, fields, onUpdateSet, onAddSet, onRemove
       <SetHeader fields={fields} withDone />
 
       {/* Scrolls edge to edge inside the card, with the padding moved onto the content, so a tick
-          spilling out of a Done box isn't clipped at the right or above the first set. */}
+          spilling out of a Done box isn't clipped at the right or above the first set.
+          While the keypad is up, the set being typed in scrolls up to sit just above it. */}
       <ScrollView
         ref={scrollRef}
         style={{ flex: 1, marginHorizontal: -space.sm }}
         contentContainerStyle={{ gap: 4, paddingHorizontal: space.sm, paddingTop: space.xs }}
         keyboardShouldPersistTaps="handled"
+        automaticallyAdjustKeyboardInsets
       >
         {exercise.sets.map((set) => {
           const isCurrent = set.id === currentSetId;

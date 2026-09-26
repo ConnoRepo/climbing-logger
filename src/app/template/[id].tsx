@@ -7,7 +7,7 @@ import { AppText, Button, TextField } from "@/components/ui";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { RestBox } from "@/components/workout/rest-box";
 import { colors, space } from "@/constants/theme";
-import { categoryInfo } from "@/data/categories";
+import { categoryInfo, restsBetweenReps } from "@/data/categories";
 import { templateExercise } from "@/data/templates";
 import type { WorkoutTemplate } from "@/data/types";
 import { useCommittedText } from "@/hooks/use-committed-text";
@@ -47,9 +47,11 @@ function Editor({ template }: { template: WorkoutTemplate }) {
   });
 
   return (
+    // The field being typed in scrolls up to sit just above the keyboard.
     <ScrollView
       contentContainerStyle={{ paddingHorizontal: space.md, paddingVertical: space.md, gap: space.md }}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
     >
       <View>
         <TextField variant="header" underline accessibilityLabel="Workout name" {...name} />
@@ -65,10 +67,21 @@ function Editor({ template }: { template: WorkoutTemplate }) {
             measures={categoryInfo(template.category).measures}
             onChange={(patch) => log.updateTemplateExercise(template.id, exercise.id, patch)}
           />
-          <RestBox
-            value={exercise.restSeconds}
-            onChange={(restSeconds) => log.updateTemplateExercise(template.id, exercise.id, { restSeconds })}
-          />
+          {/* A stopwatch session has no sets to rest between. */}
+          {exercise.measure !== "stopwatch" && (
+            <RestBox
+              value={exercise.restSeconds}
+              onChange={(restSeconds) => log.updateTemplateExercise(template.id, exercise.id, { restSeconds })}
+            />
+          )}
+          {/* Under rest between sets, so turning it on leaves everything above where it was. */}
+          {restsBetweenReps(exercise) && (
+            <RestBox
+              between="reps"
+              value={exercise.offSeconds}
+              onChange={(offSeconds) => log.updateTemplateExercise(template.id, exercise.id, { offSeconds })}
+            />
+          )}
         </>
       )}
 

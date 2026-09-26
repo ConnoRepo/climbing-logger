@@ -5,7 +5,7 @@ import type { Category, Measure, Prescription, SetValues } from "./types";
 /** `measures` are the options offered for a workout in that category; the first is the default. */
 export const CATEGORIES: { id: Category; label: string; icon: IconName; measures: Measure[] }[] = [
   { id: "mobility", label: "Mobility", icon: "loader", measures: ["time", "reps"] },
-  { id: "climbing", label: "Climbing", icon: "image", measures: ["climbs", "intervals", "time"] },
+  { id: "climbing", label: "Climbing", icon: "image", measures: ["climbs", "intervals", "time", "stopwatch"] },
   { id: "workout", label: "Workout", icon: "link", measures: ["reps", "time"] },
 ];
 
@@ -54,6 +54,11 @@ export const MEASURES: Record<
     /** Logged per set on a session (planned vs actual). */
     setFields: FieldSpec[];
     usesGrade: boolean;
+    /**
+     * Rest between the reps of a set (offSeconds) gets its own box under the card, beside
+     * rest between sets, once a set has more than one rep. Intervals edits its Off in the card.
+     */
+    restBetweenReps: boolean;
     defaults: Partial<Prescription>;
   }
 > = {
@@ -62,20 +67,24 @@ export const MEASURES: Record<
     fields: [F.reps, F.weight, F.rest],
     setFields: [F.reps, F.weight],
     usesGrade: false,
+    restBetweenReps: false,
     defaults: { sets: 3, reps: 8, restSeconds: 120 },
   },
+  // Each set is its reps, each rep a hold: one 30s hold, or repeaters' 6 × 7s with 3s between.
   time: {
     label: "Time",
-    fields: [F.hold, F.weight, F.rest],
-    setFields: [F.hold],
+    fields: [F.weight, F.hold, F.reps, F.rest],
+    setFields: [F.weight, F.hold, F.reps],
     usesGrade: false,
-    defaults: { sets: 2, seconds: 30, restSeconds: 30 },
+    restBetweenReps: true,
+    defaults: { sets: 2, seconds: 30, reps: 1, offSeconds: 3, restSeconds: 30 },
   },
   intervals: {
     label: "Intervals",
     fields: [F.hangs, F.on, F.off, F.edge, F.weight, F.rest],
     setFields: [F.hangs, F.weight],
     usesGrade: false,
+    restBetweenReps: false,
     defaults: { sets: 3, reps: 6, seconds: 7, offSeconds: 3, edgeMm: 20, restSeconds: 180 },
   },
   climbs: {
@@ -83,7 +92,18 @@ export const MEASURES: Record<
     fields: [F.problems, F.rest],
     setFields: [F.problems],
     usesGrade: true,
+    restBetweenReps: false,
     defaults: { sets: 4, reps: 4, restSeconds: 180 },
+  },
+  // An open-ended session: one clock that counts up until it's finished. Its time is logged
+  // on its one set (seconds), so there's nothing to plan.
+  stopwatch: {
+    label: "Stopwatch",
+    fields: [],
+    setFields: [],
+    usesGrade: false,
+    restBetweenReps: false,
+    defaults: { sets: 1 },
   },
 };
 
@@ -104,12 +124,13 @@ export function plannedSetValues(p: Prescription): SetValues {
 
 /**
  * The part of a set change that also applies to every later set: reps
- * (hangs, problems) and weight. Undefined when the change has neither.
+ * (hangs, problems), time and weight. Undefined when the change has none of them.
  */
 export function carriedForward(change: SetValues | undefined): SetValues | undefined {
   if (!change) return undefined;
   const carried: SetValues = {};
   if (change.reps !== undefined) carried.reps = change.reps;
+  if (change.seconds !== undefined) carried.seconds = change.seconds;
   if (change.weightLb !== undefined) carried.weightLb = change.weightLb;
   return Object.keys(carried).length ? carried : undefined;
 }
@@ -118,4 +139,9 @@ export function carriedForward(change: SetValues | undefined): SetValues | undef
 export function plannedSets(p: Prescription): SetValues[] {
   const base = plannedSetValues(p);
   return Array.from({ length: p.sets }, (_, i) => ({ ...base, ...p.setValues?.[i] }));
+}
+
+/** Whether a workout rests between the reps of its sets: timed reps, once a set has more than one. */
+export function restsBetweenReps(p: Prescription) {
+  return MEASURES[p.measure].restBetweenReps && plannedSets(p).some((set) => (set.reps ?? 1) > 1);
 }

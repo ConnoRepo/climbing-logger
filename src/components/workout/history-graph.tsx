@@ -4,8 +4,8 @@ import Svg, { Line, Polyline } from "react-native-svg";
 
 import { AppText, Box } from "@/components/ui";
 import { borders, colors, space, type } from "@/constants/theme";
-import { formatWeight } from "@/data/format";
-import type { WeightPoint } from "@/data/progress";
+import { formatDuration, formatWeight } from "@/data/format";
+import type { HistoryPoint } from "@/data/progress";
 import { addDays, daysBetween, formatAxisDate, formatShortDate, toKey, type DateKey } from "@/lib/dates";
 import { clamp } from "@/lib/math";
 
@@ -14,10 +14,7 @@ import { clamp } from "@/lib/math";
 const WINDOW_DAYS = 28;
 const X_TICK_EVERY_DAYS = 7;
 
-/** The top of the y axis is always this much heavier than the heaviest point. */
-const HEADROOM_LB = 5;
 const MAX_Y_INTERVALS = 5;
-const Y_STEPS = [5, 10, 20, 25, 50, 100, 200, 500];
 
 /** Room around the plot for the axis marks; everything else is plot. */
 const PLOT = { left: 44, right: space.md, top: 10, bottom: 28 };
@@ -37,27 +34,61 @@ const CALLOUT_GAP = 12;
 
 type Size = { width: number; height: number };
 
-/**
- * Weight range and gridline values. The top is the heaviest point + 5 lb; the bottom
- * sits 5 lb under the lightest, rounded to 5 and never below 0 unless a set was assisted.
- */
-function weightAxis(weights: number[]) {
-  const top = Math.max(...weights) + HEADROOM_LB;
-  const lightest = Math.min(...weights);
-  const under = Math.floor((lightest - HEADROOM_LB) / 5) * 5;
-  const bottom = lightest >= 0 ? Math.max(0, under) : under;
-  const step = Y_STEPS.find((s) => (top - bottom) / s <= MAX_Y_INTERVALS) ?? Y_STEPS[Y_STEPS.length - 1];
+type Axis = { top: number; bottom: number; ticks: number[] };
+
+/** Gridlines every `step` from `bottom` to `top`, with the smallest step that keeps them to 5 or fewer. */
+function withTicks(top: number, bottom: number, steps: number[]): Axis {
+  const step = steps.find((s) => (top - bottom) / s <= MAX_Y_INTERVALS) ?? steps[steps.length - 1];
   const ticks: number[] = [];
   for (let v = Math.ceil(bottom / step) * step; v <= top; v += step) ticks.push(v);
   return { top, bottom, ticks };
 }
 
+/** What a graph plots: its axis, how its values read, and what to say when there are none. */
+export type GraphScale = {
+  axis: (values: number[]) => Axis;
+  tickLabel: (value: number) => string;
+  valueLabel: (value: number) => string;
+  /** Said of the gold point, e.g. "heaviest". */
+  best: string;
+  empty: string;
+};
+
+/** The top of the weight axis is always this much heavier than the heaviest point. */
+const HEADROOM_LB = 5;
+
+/** Weight in lb, from `weightHistory`. */
+export const WEIGHT_SCALE: GraphScale = {
+  // The top is the heaviest point + 5 lb; the bottom sits 5 lb under the lightest,
+  // rounded to 5 and never below 0 unless a set was assisted.
+  axis: (weights) => {
+    const top = Math.max(...weights) + HEADROOM_LB;
+    const lightest = Math.min(...weights);
+    const under = Math.floor((lightest - HEADROOM_LB) / 5) * 5;
+    const bottom = lightest >= 0 ? Math.max(0, under) : under;
+    return withTicks(top, bottom, [5, 10, 20, 25, 50, 100, 200, 500]);
+  },
+  tickLabel: (lb) => `${lb} lb`,
+  valueLabel: formatWeight,
+  best: "heaviest",
+  empty: "No weight logged in the last 4 weeks.\nCheck off sets to start the graph.",
+};
+
+/** Session length in minutes, from `durationHistory`. From 0 up to 15 minutes past the longest. */
+export const DURATION_SCALE: GraphScale = {
+  axis: (minutes) => withTicks(Math.max(...minutes) + 15, 0, [15, 30, 60, 90, 120, 180, 240]),
+  tickLabel: (min) => (min >= 60 && min % 60 === 0 ? `${min / 60}h` : min > 60 ? `${Math.floor(min / 60)}h${min % 60}` : `${min}m`),
+  valueLabel: (min) => formatDuration(min * 60),
+  best: "longest",
+  empty: "No sessions timed in the last 4 weeks.\nFinish one to start the graph.",
+};
+
 /**
- * Weight over the last 4 weeks for one workout. Unframed: the axes are its edges,
- * and it fills its parent so it can match the size of whatever it sits beside.
- * Tap a point for its weight and date; the heaviest one is gold.
+ * One workout's last 4 weeks, a point per day (its weight, or its length for a stopwatch
+ * session). Unframed: the axes are its edges, and it fills its parent so it can match
+ * the size of whatever it sits beside. Tap a point for its value and date; the best one is gold.
  */
-export function WeightGraph({ points }: { points: WeightPoint[] }) {
+export function HistoryGraph({ points, scale }: { points: HistoryPoint[]; scale: GraphScale }) {
   const [size, setSize] = useState<Size | null>(null);
   const [selected, setSelected] = useState<DateKey | null>(null);
 
@@ -73,35 +104,38 @@ export function WeightGraph({ points }: { points: WeightPoint[] }) {
       {visible.length === 0 ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: space.md }}>
           <AppText variant="note" color={colors.placeholder} align="center">
-            No weight logged in the last 4 weeks.{"\n"}Check off sets to start the graph.
+            {scale.empty}
           </AppText>
         </View>
       ) : (
-        size && <Plot points={visible} start={start} size={size} selected={selected} onSelect={setSelected} />
+        size && (
+          <Plot points={visible} scale={scale} start={start} size={size} selected={selected} onSelect={setSelected} />
+        )
       )}
     </View>
   );
 }
 
 type PlotProps = {
-  points: WeightPoint[];
+  points: HistoryPoint[];
+  scale: GraphScale;
   start: DateKey;
   size: Size;
   selected: DateKey | null;
   onSelect: (date: DateKey | null) => void;
 };
 
-function Plot({ points, start, size, selected, onSelect }: PlotProps) {
+function Plot({ points, scale, start, size, selected, onSelect }: PlotProps) {
   const [x0, x1] = [PLOT.left, size.width - PLOT.right];
   const [y0, y1] = [PLOT.top, size.height - PLOT.bottom];
-  const axis = weightAxis(points.map((p) => p.weightLb));
+  const axis = scale.axis(points.map((p) => p.value));
 
   const xOf = (date: DateKey) => x0 + (daysBetween(start, date) / WINDOW_DAYS) * (x1 - x0);
-  const yOf = (lb: number) => y1 - ((lb - axis.bottom) / (axis.top - axis.bottom)) * (y1 - y0);
+  const yOf = (v: number) => y1 - ((v - axis.bottom) / (axis.top - axis.bottom)) * (y1 - y0);
 
-  const plotted = points.map((p) => ({ ...p, x: xOf(p.date), y: yOf(p.weightLb) }));
-  // The first day the heaviest weight was reached.
-  const best = points.reduce((a, b) => (b.weightLb > a.weightLb ? b : a));
+  const plotted = points.map((p) => ({ ...p, x: xOf(p.date), y: yOf(p.value) }));
+  // The first day the best value was reached.
+  const best = points.reduce((a, b) => (b.value > a.value ? b : a));
   const active = plotted.find((p) => p.date === selected);
   const dateTicks = Array.from({ length: WINDOW_DAYS / X_TICK_EVERY_DAYS + 1 }, (_, i) =>
     addDays(start, i * X_TICK_EVERY_DAYS),
@@ -111,16 +145,16 @@ function Plot({ points, start, size, selected, onSelect }: PlotProps) {
     <>
       <Svg width={size.width} height={size.height} style={StyleSheet.absoluteFill}>
         {/* Faint graph-paper lines, then the ink axes and their tick marks. */}
-        {axis.ticks.map((lb) => (
-          <Line key={`y${lb}`} x1={x0} x2={x1} y1={yOf(lb)} y2={yOf(lb)} stroke={colors.fillLight} strokeWidth={GRID} />
+        {axis.ticks.map((v) => (
+          <Line key={`y${v}`} x1={x0} x2={x1} y1={yOf(v)} y2={yOf(v)} stroke={colors.fillLight} strokeWidth={GRID} />
         ))}
         {dateTicks.map((d) => (
           <Line key={`x${d}`} x1={xOf(d)} x2={xOf(d)} y1={y0} y2={y1} stroke={colors.fillLight} strokeWidth={GRID} />
         ))}
         <Line x1={x0} x2={x0} y1={y0} y2={y1} stroke={colors.ink} strokeWidth={LINE} strokeLinecap="square" />
         <Line x1={x0} x2={x1} y1={y1} y2={y1} stroke={colors.ink} strokeWidth={LINE} strokeLinecap="square" />
-        {axis.ticks.map((lb) => (
-          <Line key={`yt${lb}`} x1={x0 - TICK} x2={x0} y1={yOf(lb)} y2={yOf(lb)} stroke={colors.ink} strokeWidth={LINE} />
+        {axis.ticks.map((v) => (
+          <Line key={`yt${v}`} x1={x0 - TICK} x2={x0} y1={yOf(v)} y2={yOf(v)} stroke={colors.ink} strokeWidth={LINE} />
         ))}
         {dateTicks.map((d) => (
           <Line key={`xt${d}`} x1={xOf(d)} x2={xOf(d)} y1={y1} y2={y1 + TICK} stroke={colors.ink} strokeWidth={LINE} />
@@ -141,9 +175,9 @@ function Plot({ points, start, size, selected, onSelect }: PlotProps) {
       {/* Tapping anywhere off a point clears the selection. */}
       <Pressable accessible={false} style={StyleSheet.absoluteFill} onPress={() => onSelect(null)} />
 
-      {axis.ticks.map((lb) => (
-        <AxisLabel key={lb} style={{ left: 0, width: x0 - TICK - 3, top: yOf(lb) - LABEL_H / 2, textAlign: "right" }}>
-          {`${lb} lb`}
+      {axis.ticks.map((v) => (
+        <AxisLabel key={v} style={{ left: 0, width: x0 - TICK - 3, top: yOf(v) - LABEL_H / 2, textAlign: "right" }}>
+          {scale.tickLabel(v)}
         </AxisLabel>
       ))}
       {dateTicks.map((d) => (
@@ -168,7 +202,7 @@ function Plot({ points, start, size, selected, onSelect }: PlotProps) {
           <Pressable
             key={p.date}
             accessibilityRole="button"
-            accessibilityLabel={`${formatWeight(p.weightLb)} on ${formatShortDate(p.date)}${isBest ? ", heaviest" : ""}`}
+            accessibilityLabel={`${scale.valueLabel(p.value)} on ${formatShortDate(p.date)}${isBest ? `, ${scale.best}` : ""}`}
             accessibilityState={{ selected: isActive }}
             onPress={() => onSelect(isActive ? null : p.date)}
             style={{
@@ -196,7 +230,7 @@ function Plot({ points, start, size, selected, onSelect }: PlotProps) {
         );
       })}
 
-      {active && <Callout point={active} size={size} />}
+      {active && <Callout point={active} label={scale.valueLabel(active.value)} size={size} />}
     </>
   );
 }
@@ -214,8 +248,8 @@ function AxisLabel({ style, children }: { style: TextStyle; children: string }) 
   );
 }
 
-/** Weight and date above the tapped point; flips below it near the top, and stays inside the frame. */
-function Callout({ point, size }: { point: { x: number; y: number } & WeightPoint; size: Size }) {
+/** Value and date above the tapped point; flips below it near the top, and stays inside the frame. */
+function Callout({ point, label, size }: { point: { x: number; y: number } & HistoryPoint; label: string; size: Size }) {
   const above = point.y - CALLOUT_GAP - CALLOUT_H;
   const top = above >= 4 ? above : point.y + CALLOUT_GAP;
   const left = clamp(point.x - CALLOUT_W / 2, 4, size.width - CALLOUT_W - 4);
@@ -234,7 +268,7 @@ function Callout({ point, size }: { point: { x: number; y: number } & WeightPoin
         justifyContent: "center",
       }}
     >
-      <AppText variant="label">{formatWeight(point.weightLb)}</AppText>
+      <AppText variant="label">{label}</AppText>
       <AppText variant="note">{formatShortDate(point.date)}</AppText>
     </Box>
   );

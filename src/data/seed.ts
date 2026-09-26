@@ -10,6 +10,7 @@ export function seedData(): AppData {
     templates: [
       newTemplate("climbing", "Volume Session", newPrescription("climbs", { name: "Volume Session" })),
       newTemplate("climbing", "Max Session", newPrescription("climbs", { name: "Max Session" })),
+      newTemplate("climbing", "Climbing Session", newPrescription("stopwatch", { name: "Climbing Session" })),
       newTemplate("workout", "Strength Pull-Ups", {
         ...newPrescription("reps", { name: pullUps.name, exerciseId: pullUps.id }),
         sets: 4,

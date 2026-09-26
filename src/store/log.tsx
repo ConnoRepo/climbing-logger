@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
 
 import { newId } from "@/data/ids";
-import { SHOW_FAKE_POINTS, weightHistory, withFakePoints } from "@/data/progress";
+import { FAKE_MINUTES, FAKE_WEIGHTS, SHOW_FAKE_POINTS, durationHistory, weightHistory, withFakePoints } from "@/data/progress";
 import { sessionsOn } from "@/data/schedule";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
@@ -49,7 +49,12 @@ function useLogState() {
     journalFor: (date: DateKey) => data.journal[date] ?? "",
     weightHistory: (templateId: string) => {
       const points = weightHistory(data.sessions, templateId);
-      return SHOW_FAKE_POINTS ? withFakePoints(points) : points;
+      return SHOW_FAKE_POINTS ? withFakePoints(points, FAKE_WEIGHTS) : points;
+    },
+    /** Minutes on the clock per day, for a stopwatch workout. */
+    durationHistory: (templateId: string) => {
+      const points = durationHistory(data.sessions, templateId);
+      return SHOW_FAKE_POINTS ? withFakePoints(points, FAKE_MINUTES) : points;
     },
 
     // Templates
@@ -78,6 +83,10 @@ function useLogState() {
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
     setRest: (sessionId: string, exerciseId: string, restSeconds: number) =>
       dispatch({ type: "session/setRest", sessionId, exerciseId, restSeconds }),
+    startStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/start", sessionId }),
+    pauseStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/pause", sessionId }),
+    /** Stops the clock and logs its time as the session's. */
+    finishStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/finish", sessionId }),
     addSet: (sessionId: string, exerciseId: string) => dispatch({ type: "set/add", sessionId, exerciseId }),
     removeSet: (sessionId: string, exerciseId: string, setId: string) =>
       dispatch({ type: "set/remove", sessionId, exerciseId, setId }),

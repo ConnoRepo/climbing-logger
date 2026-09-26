@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
 import { AppText, Box, Checkbox, Pills, Stepper, TextField } from "@/components/ui";
-import { colors, space } from "@/constants/theme";
+import { colors, space, type } from "@/constants/theme";
 import { MEASURES, carriedForward, fieldLabel, plannedSets } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
 import type { Measure, Prescription, SetValues } from "@/data/types";
@@ -18,7 +18,8 @@ type ExerciseCardProps = {
 /**
  * The plan for a workout's exercise, laid out like the day view's set card:
  * a row per set, then the settings shared by every set. Rest is edited
- * outside the card (see RestBox).
+ * outside the card (see RestBox). Reps and Time are the same size, so
+ * switching between them moves nothing.
  */
 export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCardProps) {
   const spec = MEASURES[p.measure];
@@ -31,7 +32,7 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
   const setSets = (next: SetValues[]) => onChange({ sets: next.length, setValues: next, ...next[0] });
 
   function updateSet(index: number, values: SetValues) {
-    // As on a day: new reps or weight carry forward to every later set.
+    // As on a day: new reps, time or weight carry forward to every later set.
     const carried = carriedForward(values);
     setSets(
       sets.map((set, i) => {
@@ -44,9 +45,12 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
 
   return (
     <Box style={{ padding: space.sm, gap: space.sm }}>
-      <AppText variant="note" color={colors.placeholder} align="center">
-        {formatPrescription(p)}
-      </AppText>
+      {/* Two lines tall whether the summary takes one or two, so it never moves what's under it. */}
+      <View style={{ height: type.note.lineHeight * 2, justifyContent: "center" }}>
+        <AppText variant="note" color={colors.placeholder} align="center" numberOfLines={2}>
+          {formatPrescription(p)}
+        </AppText>
+      </View>
 
       {options.length > 1 && <Pills options={options} selected={p.measure} onSelect={(measure) => onChange({ measure })} />}
 
@@ -65,13 +69,16 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
         </View>
       )}
 
-      <SetList
-        sets={sets.map((values, i) => ({ key: String(i), values }))}
-        fields={spec.setFields}
-        onChange={updateSet}
-        onAdd={() => setSets([...sets, { ...sets.at(-1) }])}
-        onRemove={() => setSets(sets.slice(0, -1))}
-      />
+      {/* A stopwatch has nothing to plan: it just counts up. */}
+      {p.measure !== "stopwatch" && (
+        <SetList
+          sets={sets.map((values, i) => ({ key: String(i), values }))}
+          fields={spec.setFields}
+          onChange={updateSet}
+          onAdd={() => setSets([...sets, { ...sets.at(-1) }])}
+          onRemove={() => setSets(sets.slice(0, -1))}
+        />
+      )}
 
       {spec.usesGrade && (
         <TextField

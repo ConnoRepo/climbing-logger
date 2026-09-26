@@ -4,7 +4,7 @@ import type { AppData, Prescription, Session, SetValues } from "./types";
 /**
  * Upgrades saved data to the current shape. Pure, so the same code can run
  * against backend rows later. Sessions are history and are only rewritten
- * when a stored unit changes.
+ * when a stored unit or meaning changes.
  */
 export function migrate(data: AppData, fromVersion: number): AppData {
   let next = data;
@@ -38,7 +38,30 @@ export function migrate(data: AppData, fromVersion: number): AppData {
       }),
     };
   }
+  // v4 → v5: timed sets count reps (repeaters: 6 × 7s). Ones saved before were a single hold.
+  if (fromVersion < 5) {
+    next = {
+      ...next,
+      templates: next.templates.map((t) => ({ ...t, exercises: t.exercises.map(oneRep) })),
+      sessions: next.sessions.map((s) => ({
+        ...s,
+        exercises: s.exercises.map((e) =>
+          e.prescription.measure !== "time"
+            ? e
+            : {
+                ...e,
+                prescription: oneRep(e.prescription),
+                sets: e.sets.map((set) => ({ ...set, actual: { reps: 1, ...set.actual } })),
+              },
+        ),
+      })),
+    };
+  }
   return next;
+}
+
+function oneRep(p: Prescription): Prescription {
+  return p.measure === "time" && p.reps === undefined ? { ...p, reps: 1 } : p;
 }
 
 const LB_PER_KG = 2.20462;

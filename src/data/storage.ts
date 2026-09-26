@@ -8,7 +8,7 @@ import type { AppData } from "./types";
  * later; bump SCHEMA_VERSION and add a step to migrate() when AppData changes shape.
  */
 const KEY = "climbing-app/state";
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 type Stored = { schemaVersion: number; data: AppData };
 

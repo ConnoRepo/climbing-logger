@@ -8,7 +8,7 @@ import type { DateKey } from "@/lib/dates";
 export type Category = "mobility" | "climbing" | "workout";
 
 /** How one set of an exercise is measured. */
-export type Measure = "reps" | "time" | "intervals" | "climbs";
+export type Measure = "reps" | "time" | "intervals" | "climbs" | "stopwatch";
 
 type Timestamps = { createdAt: string; updatedAt: string };
 
@@ -96,6 +96,8 @@ export type Session = Timestamps & {
   name: string;
   status: "planned" | "done";
   completedAt?: string;
+  /** Stopwatch sessions: when the clock was last started; unset while it's stopped. */
+  runningSince?: string;
   exercises: SessionExercise[];
 };
 
