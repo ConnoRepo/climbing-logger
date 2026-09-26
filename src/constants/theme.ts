@@ -13,9 +13,13 @@ export const colors = {
   fill: "#D9D9D9",
   fillLight: "#EAEAEA",
   fillFaint: "#F5F5F5",
+  // Paused timer panel: a shade darker than `fill`
+  fillDark: "#C4C4C4",
   placeholder: "#C0C0C0",
   // Start button and the timer's GO panel
   go: "#B9E8B0",
+  // Tick on a finished set in the timer: deeper than `go`, which fades out as a thin stroke on white
+  check: "#3C9A3F",
   // Weight graph points: a shade darker than `fill` so they read over the lines
   graphDot: "#B8B8B8",
   // Heaviest point on a weight graph
@@ -31,6 +35,7 @@ export const fonts = {
 
 /** Text styles, named after where they appear in the Figma frames. */
 export const type = {
+  clock: { fontFamily: fonts.semiBold, fontSize: 112, lineHeight: 134 }, // timer countdown
   display: { fontFamily: fonts.semiBold, fontSize: 64, lineHeight: 77 }, // TIMER, Set 1
   title: { fontFamily: fonts.semiBold, fontSize: 48, lineHeight: 58 }, // Journal
   subDisplay: { fontFamily: fonts.semiBold, fontSize: 40, lineHeight: 48 }, // Rest

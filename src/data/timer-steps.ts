@@ -113,3 +113,8 @@ export function stepCaption(step: TimerStep, set: SetLog, fields: FieldSpec[]) {
   }
   return parts.join(" · ");
 }
+
+/** Line under the clock while counting down to the first step: "Get ready · Set 1 next". */
+export function prepCaption(step: TimerStep) {
+  return `Get ready · Set ${step.setNumber} next`;
+}

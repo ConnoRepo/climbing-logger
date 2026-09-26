@@ -7,6 +7,8 @@ type CheckboxProps = {
   checked: boolean;
   onChange?: (checked: boolean) => void;
   label?: string;
+  /** Tick colour; ink by default. */
+  color?: string;
 };
 
 /**
@@ -14,7 +16,7 @@ type CheckboxProps = {
  * The tick is a sibling drawn over the outlined square, not its child, so the
  * square's border never clips it; leave ~10pt above and ~8pt right of it free.
  */
-export function Checkbox({ checked, onChange, label }: CheckboxProps) {
+export function Checkbox({ checked, onChange, label, color }: CheckboxProps) {
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -30,6 +32,7 @@ export function Checkbox({ checked, onChange, label }: CheckboxProps) {
           source={require("@/assets/icons/checkmark.svg")}
           style={{ position: "absolute", left: 6.5, top: -10.1, width: 30.77, height: 30 }}
           contentFit="fill"
+          tintColor={color}
         />
       )}
     </Pressable>

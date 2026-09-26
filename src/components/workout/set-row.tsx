@@ -1,7 +1,7 @@
 import { View, type StyleProp, type ViewStyle } from "react-native";
 
 import { AppText, Checkbox, STEPPER_HEIGHT } from "@/components/ui";
-import { space } from "@/constants/theme";
+import { colors, space } from "@/constants/theme";
 import { fieldLabel, type FieldSpec } from "@/data/categories";
 import type { SetValues } from "@/data/types";
 
@@ -65,7 +65,7 @@ export function SetRow({ position, values, done = false, fields, onChange, onTog
       <SetSteppers position={position} values={values} fields={fields} onChange={onChange} size={active ? "large" : "regular"} />
       {onToggleDone && (
         <View style={{ width: DONE_COL, alignItems: "center" }}>
-          <Checkbox checked={done} onChange={onToggleDone} label={`Set ${position + 1} done`} />
+          <Checkbox checked={done} onChange={onToggleDone} label={`Set ${position + 1} done`} color={colors.check} />
         </View>
       )}
     </View>
