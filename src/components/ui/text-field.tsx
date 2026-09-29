@@ -12,6 +12,9 @@ type TextFieldProps = TextInputProps & {
 export function TextField({ variant = "button", underline, style, ...rest }: TextFieldProps) {
   return (
     <TextInput
+      // A scroll or swipe that starts on the field takes the touch over, rather than ending in a tap
+      // that opens the keyboard (see NotebookInput).
+      rejectResponderTermination={false}
       placeholderTextColor={colors.placeholder}
       style={[
         type[variant],

@@ -13,12 +13,12 @@ type SessionExerciseCardProps = {
   onRemoveSet: (setId: string) => void;
 };
 
-/** Logs what was actually done, set by set. */
+/** Logs what was actually done, set by set. Grows to fill the height it's given, showing more sets. */
 export function SessionExerciseCard({ exercise, onUpdateSet, onAddSet, onRemoveSet }: SessionExerciseCardProps) {
   const last = exercise.sets.at(-1);
 
   return (
-    <Box style={{ padding: space.sm, gap: space.sm }}>
+    <Box style={{ flexGrow: 1, padding: space.sm, gap: space.sm }}>
       <AppText variant="note" color={colors.placeholder} align="center">
         Planned: {formatPrescription(exercise.prescription)}
       </AppText>

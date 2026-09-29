@@ -1,5 +1,6 @@
 import { restsBetweenReps } from "./categories";
-import { isStopwatch, stopwatchSet } from "./stopwatch";
+import { isStopwatch } from "./kinds";
+import { stopwatchSet } from "./stopwatch";
 import type { Prescription, Session, SetValues } from "./types";
 
 export function formatSeconds(total: number) {

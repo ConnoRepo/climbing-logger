@@ -6,6 +6,7 @@ import { AppText, Box } from "@/components/ui";
 import { borders, colors, space, type } from "@/constants/theme";
 import { formatDuration, formatWeight } from "@/data/format";
 import type { HistoryPoint } from "@/data/progress";
+import type { HistoryKind } from "@/data/types";
 import { addDays, daysBetween, formatAxisDate, formatShortDate, toKey, type DateKey } from "@/lib/dates";
 import { clamp } from "@/lib/math";
 
@@ -58,7 +59,7 @@ export type GraphScale = {
 const HEADROOM_LB = 5;
 
 /** Weight in lb, from `weightHistory`. */
-export const WEIGHT_SCALE: GraphScale = {
+const WEIGHT_SCALE: GraphScale = {
   // The top is the heaviest point + 5 lb; the bottom sits 5 lb under the lightest,
   // rounded to 5 and never below 0 unless a set was assisted.
   axis: (weights) => {
@@ -75,7 +76,7 @@ export const WEIGHT_SCALE: GraphScale = {
 };
 
 /** Session length in minutes, from `durationHistory`. From 0 up to 15 minutes past the longest. */
-export const DURATION_SCALE: GraphScale = {
+const DURATION_SCALE: GraphScale = {
   axis: (minutes) => withTicks(Math.max(...minutes) + 15, 0, [15, 30, 60, 90, 120, 180, 240]),
   tickLabel: (min) => (min >= 60 && min % 60 === 0 ? `${min / 60}h` : min > 60 ? `${Math.floor(min / 60)}h${min % 60}` : `${min}m`),
   valueLabel: (min) => formatDuration(min * 60),
@@ -83,14 +84,30 @@ export const DURATION_SCALE: GraphScale = {
   empty: "No sessions timed in the last 4 weeks.\nFinish one to start the graph.",
 };
 
+/** Each kind of history graph's scale (see MEASURES' `history`). */
+export const SCALES: Record<HistoryKind, GraphScale> = {
+  weight: WEIGHT_SCALE,
+  duration: DURATION_SCALE,
+};
+
+type HistoryGraphProps = {
+  points: HistoryPoint[];
+  scale: GraphScale;
+  /** The tapped point's day. Pass with `onSelect` to share it (e.g. with a list of notes); otherwise the graph keeps its own. */
+  selected?: DateKey | null;
+  onSelect?: (date: DateKey | null) => void;
+};
+
 /**
  * One workout's last 4 weeks, a point per day (its weight, or its length for a stopwatch
  * session). Unframed: the axes are its edges, and it fills its parent so it can match
  * the size of whatever it sits beside. Tap a point for its value and date; the best one is gold.
  */
-export function HistoryGraph({ points, scale }: { points: HistoryPoint[]; scale: GraphScale }) {
+export function HistoryGraph({ points, scale, selected: shared, onSelect }: HistoryGraphProps) {
   const [size, setSize] = useState<Size | null>(null);
-  const [selected, setSelected] = useState<DateKey | null>(null);
+  const [own, setOwn] = useState<DateKey | null>(null);
+  const selected = onSelect ? (shared ?? null) : own;
+  const setSelected = onSelect ?? setOwn;
 
   const end = toKey(new Date());
   const start = addDays(end, -WINDOW_DAYS);

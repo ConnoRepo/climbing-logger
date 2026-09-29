@@ -7,6 +7,9 @@ export function NotebookInput({ style, ...rest }: TextInputProps) {
   return (
     <TextInput
       multiline
+      // Lets a scroll or swipe that starts on the box take the touch over, so a quick flick
+      // doesn't end in a tap that opens the keyboard (iOS keeps the touch by default).
+      rejectResponderTermination={false}
       placeholder="Start typing..."
       placeholderTextColor={colors.placeholder}
       textAlignVertical="top"

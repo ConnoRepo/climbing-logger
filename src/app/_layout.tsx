@@ -11,6 +11,10 @@ import { LogProvider, useLog } from "@/store/log";
 
 SplashScreen.preventAutoHideAsync();
 
+// Home always sits at the bottom of the stack, so a screen opened straight from a link
+// (say tapping the Live Activity with the app closed) still has a back button to it.
+export const unstable_settings = { anchor: "(tabs)" };
+
 // Screens out of view (the home list under a workout, the workout under its timer) skip
 // re-rendering on every edit and catch up when shown again, so taps stay quick.
 enableFreeze(true);

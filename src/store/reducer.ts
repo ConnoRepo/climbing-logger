@@ -1,7 +1,8 @@
 import { MAX_SETS, MEASURES, carriedForward, categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
+import { isStopwatch } from "@/data/kinds";
 import { instantiate, makeSets, sessionsOn } from "@/data/schedule";
-import { isStopwatch, stopClock, withSet } from "@/data/stopwatch";
+import { stopClock, withSet } from "@/data/stopwatch";
 import { newExercise, newPrescription, newTemplate } from "@/data/templates";
 import type {
   AppData,
@@ -30,6 +31,7 @@ export type Action =
   | { type: "session/move"; id: string; date: DateKey | null; index?: number }
   | { type: "session/remove"; id: string }
   | { type: "session/setDone"; id: string; done: boolean }
+  | { type: "session/setNotes"; id: string; notes: string }
   | { type: "session/setRest"; sessionId: string; exerciseId: string; restSeconds: number }
   // Stopwatch sessions
   | { type: "stopwatch/start" | "stopwatch/pause" | "stopwatch/finish"; sessionId: string }
@@ -161,6 +163,9 @@ export function reducer(state: AppData, action: Action): AppData {
         // Ticking off a stopwatch session stops its clock and logs the time (unticking takes it off the graph).
         return isStopwatch(s) ? withSet(stopClock(next, now()), (set) => ({ ...set, done: action.done })) : next;
       });
+
+    case "session/setNotes":
+      return mapSession(state, action.id, (s) => ({ ...s, notes: action.notes }));
 
     // A finished session can be started again: it carries on from the time it logged.
     case "stopwatch/start":

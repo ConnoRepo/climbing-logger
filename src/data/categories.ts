@@ -1,6 +1,6 @@
 import type { IconName } from "@/components/ui";
 
-import type { Category, Measure, Prescription, SetValues } from "./types";
+import type { Category, HistoryKind, Measure, Prescription, SessionKind, SetValues } from "./types";
 
 /** `measures` are the options offered for a workout in that category; the first is the default. */
 export const CATEGORIES: { id: Category; label: string; icon: IconName; measures: Measure[] }[] = [
@@ -43,12 +43,19 @@ const F = {
 
 /**
  * Everything that differs between measures lives here: the editor, the
- * summary text and the per-set log rows are all driven from this table.
+ * summary text, the per-set log rows, how a session is run and what its
+ * graph shows are all driven from this table.
  */
 export const MEASURES: Record<
   Measure,
   {
     label: string;
+    /** How its sessions are run and logged (see SessionKind). */
+    kind: SessionKind;
+    /** What its history graph plots. */
+    history: HistoryKind;
+    /** Has sets to rest between, edited in a "Rest between sets" box under its card. */
+    restBetweenSets: boolean;
     /** Editable in the template editor, in display order. */
     fields: FieldSpec[];
     /** Logged per set on a session (planned vs actual). */
@@ -64,6 +71,9 @@ export const MEASURES: Record<
 > = {
   reps: {
     label: "Reps",
+    kind: "sets",
+    history: "weight",
+    restBetweenSets: true,
     fields: [F.reps, F.weight, F.rest],
     setFields: [F.reps, F.weight],
     usesGrade: false,
@@ -73,6 +83,9 @@ export const MEASURES: Record<
   // Each set is its reps, each rep a hold: one 30s hold, or repeaters' 6 × 7s with 3s between.
   time: {
     label: "Time",
+    kind: "sets",
+    history: "weight",
+    restBetweenSets: true,
     fields: [F.weight, F.hold, F.reps, F.rest],
     setFields: [F.weight, F.hold, F.reps],
     usesGrade: false,
@@ -81,6 +94,9 @@ export const MEASURES: Record<
   },
   intervals: {
     label: "Intervals",
+    kind: "sets",
+    history: "weight",
+    restBetweenSets: true,
     fields: [F.hangs, F.on, F.off, F.edge, F.weight, F.rest],
     setFields: [F.hangs, F.weight],
     usesGrade: false,
@@ -89,6 +105,9 @@ export const MEASURES: Record<
   },
   climbs: {
     label: "Climbs",
+    kind: "sets",
+    history: "weight",
+    restBetweenSets: true,
     fields: [F.problems, F.rest],
     setFields: [F.problems],
     usesGrade: true,
@@ -99,6 +118,9 @@ export const MEASURES: Record<
   // on its one set (seconds), so there's nothing to plan.
   stopwatch: {
     label: "Stopwatch",
+    kind: "stopwatch",
+    history: "duration",
+    restBetweenSets: false,
     fields: [],
     setFields: [],
     usesGrade: false,

@@ -1,11 +1,11 @@
 import { createContext, useContext, useEffect, useReducer, useState, type ReactNode } from "react";
 
 import { newId } from "@/data/ids";
-import { FAKE_MINUTES, FAKE_WEIGHTS, SHOW_FAKE_POINTS, durationHistory, weightHistory, withFakePoints } from "@/data/progress";
+import { FAKE_POINTS, HISTORY, SHOW_FAKE_POINTS, notesHistory, withFakePoints } from "@/data/progress";
 import { sessionsOn } from "@/data/schedule";
 import { seedData } from "@/data/seed";
 import { loadState, saveState } from "@/data/storage";
-import type { AppData, Category, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
+import type { AppData, Category, HistoryKind, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
@@ -47,15 +47,13 @@ function useLogState() {
     templatesIn: (category: Category) => templates.filter((t) => t.category === category),
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
     journalFor: (date: DateKey) => data.journal[date] ?? "",
-    weightHistory: (templateId: string) => {
-      const points = weightHistory(data.sessions, templateId);
-      return SHOW_FAKE_POINTS ? withFakePoints(points, FAKE_WEIGHTS) : points;
+    /** A workout's points over time, for its kind of graph: heaviest weight, or minutes. */
+    history: (templateId: string, kind: HistoryKind) => {
+      const points = HISTORY[kind](data.sessions, templateId);
+      return SHOW_FAKE_POINTS ? withFakePoints(points, FAKE_POINTS[kind]) : points;
     },
-    /** Minutes on the clock per day, for a stopwatch workout. */
-    durationHistory: (templateId: string) => {
-      const points = durationHistory(data.sessions, templateId);
-      return SHOW_FAKE_POINTS ? withFakePoints(points, FAKE_MINUTES) : points;
-    },
+    /** Notes from every session of a workout, newest first. */
+    notesHistory: (templateId: string) => notesHistory(data.sessions, templateId),
 
     // Templates
     createTemplate: (category: Category) => {
@@ -81,6 +79,7 @@ function useLogState() {
     moveSession: (id: string, date: DateKey | null, index?: number) =>
       dispatch({ type: "session/move", id, date, index }),
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
+    setSessionNotes: (id: string, notes: string) => dispatch({ type: "session/setNotes", id, notes }),
     setRest: (sessionId: string, exerciseId: string, restSeconds: number) =>
       dispatch({ type: "session/setRest", sessionId, exerciseId, restSeconds }),
     startStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/start", sessionId }),

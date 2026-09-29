@@ -69,6 +69,9 @@ export function Stepper({ value, onChange, step = 1, min = 0, max = 9999, label,
         onSubmitEditing={commit}
         keyboardType="decimal-pad"
         selectTextOnFocus
+        // A scroll or swipe that starts on the number takes the touch over, rather than ending in
+        // a tap that opens the keypad (see NotebookInput).
+        rejectResponderTermination={false}
         style={[
           s.text,
           {

@@ -14,13 +14,14 @@ type StopwatchCardProps = {
 
 /**
  * A stopwatch session's logged time, with a minutes stepper to fix it (say the
- * clock was left running). The stepper is hidden while the clock runs.
+ * clock was left running). The stepper is hidden while the clock runs. Grows to
+ * fill the height it's given (a pager page), with its contents centred.
  */
 export function StopwatchCard({ session, onChangeSeconds }: StopwatchCardProps) {
   const { running, elapsedMs } = useStopwatch(session);
 
   return (
-    <Box style={{ padding: space.sm, gap: space.sm, alignItems: "center" }}>
+    <Box style={{ flexGrow: 1, justifyContent: "center", padding: space.sm, gap: space.sm, alignItems: "center" }}>
       <AppText variant="note" color={colors.placeholder} align="center">
         {running ? "Running" : session.status === "done" ? "Logged" : "Counts up until you finish"}
       </AppText>

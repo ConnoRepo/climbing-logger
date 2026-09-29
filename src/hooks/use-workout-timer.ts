@@ -22,13 +22,14 @@ const PREP_SECONDS = 10;
  * Walks a session's sets and rests, after a short get-ready countdown. Timed
  * steps count down (beeping near the end) and move on by themselves (with a
  * buzz); untimed sets wait for next().
- * Leaving a set marks it done, and leaving the last step finishes the session.
+ * Leaving a set marks it done, and leaving the last step finishes the session
+ * and stops on `finished`, so the sets can be looked over before leaving.
  *
  * Locking the phone doesn't stop it: silent background audio keeps the app
  * running while a step counts down, and the Live Activity shows the step on the
  * Lock Screen. If iOS suspends the app anyway, it catches up on return.
  */
-export function useWorkoutTimer(session: Session, exercise: SessionExercise, onFinish: () => void) {
+export function useWorkoutTimer(session: Session, exercise: SessionExercise) {
   const log = useLog();
   const steps = buildSteps(exercise);
   const rows = stepRows(steps);
@@ -45,6 +46,8 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
   const rowIndex = rows.findIndex((r) => current && r.stepKeys.includes(current.key));
   // Counting down to `current`, which hasn't started yet.
   const [preparing, setPreparing] = useState(true);
+  // Past the last step: the session is done, and the timer has stopped.
+  const [finished, setFinished] = useState(false);
 
   const beep = useBeep();
   const lowBeep = useBeep("low");
@@ -66,8 +69,9 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The current set was deleted: settle on the step that took its place and start it fresh.
+  // (Once finished, sets are only being tidied up, so nothing restarts.)
   useEffect(() => {
-    if (found < 0 && current) goTo(index);
+    if (found < 0 && current && !finished) goTo(index);
   }, [found, current?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useBackgroundKeepAlive(countdown.isRunning);
@@ -82,7 +86,7 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
         : stepCaption(current, set, MEASURES[exercise.prescription.measure].setFields)
       : undefined;
   let activity: WorkoutActivityProps | undefined;
-  if (caption !== undefined) {
+  if (caption !== undefined && !finished) {
     activity = { title: session.name, caption };
     if (stepMs !== undefined && countdown.isRunning) activity = { ...activity, stepMs, endsAt: countdown.endsAt };
     else if (stepMs !== undefined) activity = { ...activity, stepMs, pausedLeftMs: countdown.remainingMs };
@@ -124,7 +128,7 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
       if (!following) {
         countdown.restart(0);
         log.setSessionDone(session.id, true);
-        onFinish();
+        setFinished(true);
         return;
       }
       i++;
@@ -141,17 +145,18 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise, onF
     if (row) goTo(steps.findIndex((s) => s.key === row.stepKeys[0]));
   }
 
-  const isTimed = preparing || currentMs !== undefined;
+  const isTimed = !finished && (preparing || currentMs !== undefined);
   return {
     current,
     /** "Get ready · Set 1 next", "Set 2 · 6 reps · +25 lb", "Rest · Set 3 next" */
     caption,
+    finished,
     isLast: !preparing && index === steps.length - 1,
     isTimed,
-    // Not at 0:00, where the last step stops as the screen closes.
+    // Not at 0:00: a step with no time set stops there straight away.
     isPaused: isTimed && !countdown.isRunning && countdown.remainingMs > 0,
     /** Doing a set (not getting ready, resting, or between a set's reps). */
-    isGo: !preparing && current?.kind === "work" && current.rep?.phase !== "off",
+    isGo: !finished && !preparing && current?.kind === "work" && current.rep?.phase !== "off",
     remainingMs: countdown.remainingMs,
     isRunning: countdown.isRunning,
     // During the get-ready, skips the rest of it.

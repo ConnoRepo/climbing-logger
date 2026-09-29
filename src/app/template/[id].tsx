@@ -7,7 +7,7 @@ import { AppText, Button, TextField } from "@/components/ui";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { RestBox } from "@/components/workout/rest-box";
 import { colors, space } from "@/constants/theme";
-import { categoryInfo, restsBetweenReps } from "@/data/categories";
+import { MEASURES, categoryInfo, restsBetweenReps } from "@/data/categories";
 import { templateExercise } from "@/data/templates";
 import type { WorkoutTemplate } from "@/data/types";
 import { useCommittedText } from "@/hooks/use-committed-text";
@@ -68,7 +68,7 @@ function Editor({ template }: { template: WorkoutTemplate }) {
             onChange={(patch) => log.updateTemplateExercise(template.id, exercise.id, patch)}
           />
           {/* A stopwatch session has no sets to rest between. */}
-          {exercise.measure !== "stopwatch" && (
+          {MEASURES[exercise.measure].restBetweenSets && (
             <RestBox
               value={exercise.restSeconds}
               onChange={(restSeconds) => log.updateTemplateExercise(template.id, exercise.id, { restSeconds })}

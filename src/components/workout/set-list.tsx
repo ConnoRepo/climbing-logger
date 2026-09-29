@@ -8,7 +8,7 @@ import type { SetValues } from "@/data/types";
 
 import { SET_ROW_HEIGHT, SetHeader, SetRow } from "./set-row";
 
-/** The list is always this many sets tall; more sets scroll inside it. */
+/** The list is at least this many sets tall (taller when its card is given room); more sets scroll inside it. */
 const VISIBLE_SETS = 5;
 const LIST_HEIGHT = VISIBLE_SETS * SET_ROW_HEIGHT + (VISIBLE_SETS - 1) * space.sm;
 
@@ -36,7 +36,7 @@ export function SetList({ sets, fields, onChange, onAdd, onRemove }: SetListProp
 
       <ScrollView
         ref={list}
-        style={{ height: LIST_HEIGHT, flexGrow: 0 }}
+        style={{ height: LIST_HEIGHT, flexGrow: 1 }}
         contentContainerStyle={{ gap: space.sm }}
         scrollEnabled={sets.length > VISIBLE_SETS}
         nestedScrollEnabled

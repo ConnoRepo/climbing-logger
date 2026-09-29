@@ -4,11 +4,8 @@ import type { Session, SetLog } from "./types";
  * A stopwatch session is one clock that counts up. The time already counted is
  * its one set's `actual.seconds`; while the clock runs, `runningSince` adds the
  * time since it was started. Both come from the wall clock, so it keeps counting
- * while the app is suspended or closed.
+ * while the app is suspended or closed. (Whether a session is one: isStopwatch, in kinds.ts.)
  */
-export function isStopwatch(session: Session) {
-  return session.exercises[0]?.prescription.measure === "stopwatch";
-}
 
 /** The session's one set, which holds its logged time. */
 export function stopwatchSet(session: Session) {

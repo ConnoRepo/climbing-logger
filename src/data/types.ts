@@ -10,6 +10,16 @@ export type Category = "mobility" | "climbing" | "workout";
 /** How one set of an exercise is measured. */
 export type Measure = "reps" | "time" | "intervals" | "climbs" | "stopwatch";
 
+/**
+ * How a session is run and logged: set by set with the step timer, or as one clock
+ * counting up. Every measure is one of these (see MEASURES); the screens are the same
+ * bones for both, with each kind plugging in its own card and timer.
+ */
+export type SessionKind = "sets" | "stopwatch";
+
+/** What a workout's history graph plots: the heaviest weight each day, or how long it lasted. */
+export type HistoryKind = "weight" | "duration";
+
 type Timestamps = { createdAt: string; updatedAt: string };
 
 /** Canonical exercise, so history can follow "Pull Ups" across templates. */
@@ -98,6 +108,8 @@ export type Session = Timestamps & {
   completedAt?: string;
   /** Stopwatch sessions: when the clock was last started; unset while it's stopped. */
   runningSince?: string;
+  /** Written at the end of the workout, for next time. */
+  notes?: string;
   exercises: SessionExercise[];
 };
 

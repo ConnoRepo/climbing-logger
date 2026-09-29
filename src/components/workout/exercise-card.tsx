@@ -70,7 +70,7 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
       )}
 
       {/* A stopwatch has nothing to plan: it just counts up. */}
-      {p.measure !== "stopwatch" && (
+      {spec.kind === "sets" && (
         <SetList
           sets={sets.map((values, i) => ({ key: String(i), values }))}
           fields={spec.setFields}
