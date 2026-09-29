@@ -50,7 +50,9 @@ export function WorkoutRow({ title, subtitle, icon, done = false, onToggle, acce
       >
         {icon ? <Icon name={icon} size={48} /> : <View style={{ width: 48 }} />}
         <View style={{ flex: 1 }}>
-          <AppText variant="row" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+          {/* Long names end in "…". Not adjustsFontSizeToFit: with a fixed lineHeight, iOS shrinks
+              some rows to 4pt depending on where they sit on screen. */}
+          <AppText variant="row" numberOfLines={1}>
             {title}
           </AppText>
           <AppText variant="note" color={colors.placeholder} numberOfLines={1}>

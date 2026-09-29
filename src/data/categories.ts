@@ -2,11 +2,16 @@ import type { IconName } from "@/components/ui";
 
 import type { Category, HistoryKind, Measure, Prescription, SessionKind, SetValues } from "./types";
 
-/** `measures` are the options offered for a workout in that category; the first is the default. */
+/**
+ * In display order. `measures` are the options offered for a workout in that category; the first
+ * is the default. Climbing is time on the wall; hangboard work is Fingers: repeaters (intervals),
+ * max hangs (time) and weighted pick-ups (reps).
+ */
 export const CATEGORIES: { id: Category; label: string; icon: IconName; measures: Measure[] }[] = [
-  { id: "mobility", label: "Mobility", icon: "loader", measures: ["time", "reps"] },
-  { id: "climbing", label: "Climbing", icon: "image", measures: ["climbs", "intervals", "time", "stopwatch"] },
+  { id: "climbing", label: "Climbing", icon: "image", measures: ["climbs", "stopwatch"] },
+  { id: "fingers", label: "Fingers", icon: "fingers", measures: ["intervals", "time", "reps"] },
   { id: "workout", label: "Workout", icon: "link", measures: ["reps", "time"] },
+  { id: "mobility", label: "Mobility", icon: "loader", measures: ["time", "reps"] },
 ];
 
 export function categoryInfo(id: Category) {

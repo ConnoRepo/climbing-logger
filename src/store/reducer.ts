@@ -21,7 +21,7 @@ import { clamp } from "@/lib/math";
 export type Action =
   | { type: "hydrate"; data: AppData }
   // Templates
-  | { type: "template/create"; id: string; category: Category }
+  | { type: "template/create"; id: string; category: Category; name?: string }
   | { type: "template/update"; id: string; patch: Partial<Pick<WorkoutTemplate, "name" | "category">> }
   | { type: "template/delete"; id: string }
   | { type: "template/updateExercise"; templateId: string; exerciseId: string; patch: Partial<Prescription> }
@@ -75,10 +75,16 @@ export function reducer(state: AppData, action: Action): AppData {
       return action.data;
 
     case "template/create": {
-      const name = `New ${categoryInfo(action.category).label}`;
-      const exercise = newPrescription(defaultMeasure(action.category), { name });
+      const given = action.name?.trim();
+      const measure = defaultMeasure(action.category);
+      // A name given up front (the add-workout search) links to the library, like one committed in the editor.
+      const [next, linked]: [AppData, Exercise | undefined] = given
+        ? ensureExercise(state, given, action.category, measure)
+        : [state, undefined];
+      const name = given || `New ${categoryInfo(action.category).label}`;
+      const exercise = newPrescription(measure, { name, exerciseId: linked?.id ?? null });
       const template = newTemplate(action.category, name, exercise, action.id);
-      return { ...state, templates: [...state.templates, template] };
+      return { ...next, templates: [...next.templates, template] };
     }
 
     case "template/update": {

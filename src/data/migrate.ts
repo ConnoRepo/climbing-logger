@@ -1,5 +1,5 @@
 import { withSingleExercise } from "./templates";
-import type { AppData, Prescription, Session, SetValues } from "./types";
+import type { AppData, Category, Exercise, Measure, Prescription, Session, SetValues, WorkoutTemplate } from "./types";
 
 /**
  * Upgrades saved data to the current shape. Pure, so the same code can run
@@ -57,7 +57,28 @@ export function migrate(data: AppData, fromVersion: number): AppData {
       })),
     };
   }
+  // v5 → v6: hangboard work moves from Climbing to the new Fingers category. Sessions move too,
+  // so their icons match the workout they came from.
+  if (fromVersion < 6) {
+    next = {
+      ...next,
+      exercises: next.exercises.map((e): Exercise =>
+        wasHangboard(e.category, e.defaultMeasure) ? { ...e, category: "fingers" } : e,
+      ),
+      templates: next.templates.map((t): WorkoutTemplate =>
+        wasHangboard(t.category, t.exercises[0]?.measure) ? { ...t, category: "fingers" } : t,
+      ),
+      sessions: next.sessions.map((s): Session =>
+        wasHangboard(s.category, s.exercises[0]?.prescription.measure) ? { ...s, category: "fingers" } : s,
+      ),
+    };
+  }
   return next;
+}
+
+/** Climbing's timed and interval workouts were hangs, which are Fingers from v6. */
+function wasHangboard(category: Category, measure: Measure | undefined) {
+  return category === "climbing" && (measure === "intervals" || measure === "time");
 }
 
 function oneRep(p: Prescription): Prescription {

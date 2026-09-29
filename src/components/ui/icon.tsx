@@ -7,6 +7,8 @@ const sources = {
   image: require("@/assets/icons/image.svg"),
   link: require("@/assets/icons/link.svg"),
   loader: require("@/assets/icons/loader.svg"),
+  // Not in Figma: an open hand for Fingers, drawn to match the set above.
+  fingers: require("@/assets/icons/fingers.svg"),
   // Not in Figma: Feather "trash-2", drawn to match the set above, in white.
   trash: require("@/assets/icons/trash.svg"),
 };

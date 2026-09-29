@@ -63,7 +63,8 @@ function AppStack({ fontsReady }: { fontsReady: boolean }) {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="journal" options={sheet} />
-      <Stack.Screen name="add-workout" options={sheet} />
+      {/* Slides up over the whole screen; closed with its Done button. */}
+      <Stack.Screen name="add-workout" options={{ presentation: "fullScreenModal", headerShown: false }} />
       <Stack.Screen name="template/[id]" options={{ presentation: "modal", headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ title: "" }} />
       <Stack.Screen name="timer/[id]" options={{ title: "", animation: "slide_from_right" }} />

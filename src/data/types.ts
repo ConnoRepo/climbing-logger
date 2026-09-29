@@ -5,7 +5,7 @@
  */
 import type { DateKey } from "@/lib/dates";
 
-export type Category = "mobility" | "climbing" | "workout";
+export type Category = "climbing" | "fingers" | "workout" | "mobility";
 
 /** How one set of an exercise is measured. */
 export type Measure = "reps" | "time" | "intervals" | "climbs" | "stopwatch";

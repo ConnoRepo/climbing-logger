@@ -44,7 +44,8 @@ function useLogState() {
     /** Planned but not on a day yet. */
     unscheduled: sessionsOn(data.sessions, null),
     session: (id: string) => data.sessions.find((s) => s.id === id),
-    templatesIn: (category: Category) => templates.filter((t) => t.category === category),
+    /** Every workout that hasn't been deleted. */
+    templates,
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
     journalFor: (date: DateKey) => data.journal[date] ?? "",
     /** A workout's points over time, for its kind of graph: heaviest weight, or minutes. */
@@ -56,9 +57,10 @@ function useLogState() {
     notesHistory: (templateId: string) => notesHistory(data.sessions, templateId),
 
     // Templates
-    createTemplate: (category: Category) => {
+    /** A new workout, named "New Fingers" and so on unless `name` is given. */
+    createTemplate: (category: Category, name?: string) => {
       const id = newId();
-      dispatch({ type: "template/create", id, category });
+      dispatch({ type: "template/create", id, category, name });
       return id;
     },
     updateTemplate: (id: string, patch: Partial<Pick<WorkoutTemplate, "name" | "category">>) =>
