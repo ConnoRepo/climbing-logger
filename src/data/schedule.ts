@@ -17,6 +17,14 @@ export function makeSets(p: Prescription, count = p.sets): SetLog[] {
   });
 }
 
+/**
+ * A workout as it stands on its day: its sets as edited there (added, removed, reps
+ * changed) over the prescription it was added with.
+ */
+export function planOf(e: SessionExercise): Prescription {
+  return { ...e.prescription, sets: e.sets.length, setValues: e.sets.map((set) => set.actual) };
+}
+
 export function makeSessionExercise(p: Prescription, position: number): SessionExercise {
   return {
     id: newId(),

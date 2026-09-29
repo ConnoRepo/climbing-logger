@@ -17,7 +17,9 @@ export default function Landing() {
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.paper }}>
-      <View style={{ paddingHorizontal: space.md, paddingTop: 9, alignItems: "center" }}>
+      {/* The date, the view toggle and (in the daily view) the day names look evenly spaced: the
+          date's tall line leaves more room under its letters, so this gap is smaller than the next. */}
+      <View style={{ paddingHorizontal: space.md, alignItems: "center", gap: space.xs }}>
         <AppText variant="header" align="center">
           {formatDayHeader(selectedDate)}
         </AppText>

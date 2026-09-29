@@ -4,7 +4,7 @@ import { GestureDetector, type GestureType } from "react-native-gesture-handler"
 
 import { WorkoutRow } from "@/components/ui";
 import { categoryInfo } from "@/data/categories";
-import { sessionProgress } from "@/data/format";
+import { sessionSummary } from "@/data/format";
 import type { Session } from "@/data/types";
 import { useLog } from "@/store/log";
 
@@ -46,7 +46,7 @@ export function SessionRow({
   return (
     <WorkoutRow
       title={session.name}
-      subtitle={sessionProgress(session)}
+      subtitle={sessionSummary(session)}
       icon={categoryInfo(session.category).icon}
       done={session.status === "done"}
       onToggle={onToggle}

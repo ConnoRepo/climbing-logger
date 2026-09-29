@@ -1,5 +1,6 @@
 import { restsBetweenReps } from "./categories";
 import { isStopwatch } from "./kinds";
+import { planOf } from "./schedule";
 import { stopwatchSet } from "./stopwatch";
 import type { Prescription, Session, SetValues } from "./types";
 
@@ -81,10 +82,21 @@ function joined(values: number[], show: (v: number) => string = String) {
   return values.every((v) => v === values[0]) ? show(values[0] ?? 0) : values.map(show).join("/");
 }
 
+/** estimatedSeconds in whole minutes, rounded up. */
+function estimatedMinutes(p: Prescription) {
+  return Math.ceil(estimatedSeconds(p) / 60);
+}
+
+/** "~8 min", or nothing when there's nothing to time. */
+function formatEstimate(p: Prescription) {
+  const minutes = estimatedMinutes(p);
+  return minutes > 0 ? `~${minutes} min` : undefined;
+}
+
 /** "~8 min total", or nothing when there's nothing to time. */
 function formatTotal(p: Prescription) {
-  const total = estimatedSeconds(p);
-  return total > 0 ? `~${Math.ceil(total / 60)} min total` : undefined;
+  const estimate = formatEstimate(p);
+  return estimate && `${estimate} total`;
 }
 
 /**
@@ -130,9 +142,8 @@ export function formatPrescription(p: Prescription) {
 const COUNTED_IN = { reps: "reps", climbs: "problems", intervals: "hangs" } as const;
 
 /**
- * Just the sets, reps and length, short enough for one subtitle line:
- * "4 × 6 reps · ~8 min total", "2 × 30s · ~2 min total", "3 × 6 × 7s · ~5 min total",
- * "3 × 6 hangs · ~9 min total".
+ * Just the sets, reps and length, short enough for a row's subtitle:
+ * "4 × 6 reps · ~8 min", "2 × 30s · ~2 min", "3 × 6 × 7s · ~5 min", "3 × 6 hangs · ~9 min".
  */
 export function formatSummary(p: Prescription) {
   if (p.measure === "stopwatch") return "Open-ended";
@@ -144,21 +155,31 @@ export function formatSummary(p: Prescription) {
   } else {
     each = `${joined(perSet(p, "reps"))} ${COUNTED_IN[p.measure]}`;
   }
-  const total = formatTotal(p);
-  return [`${p.sets} × ${each}${side}`, ...(total ? [total] : [])].join(" · ");
+  const estimate = formatEstimate(p);
+  return [`${p.sets} × ${each}${side}`, ...(estimate ? [estimate] : [])].join(" · ");
 }
 
 /**
- * "3/5 sets", or nothing for a workout with no sets. A stopwatch session shows
- * its time once it has some ("1 h 25 min"), or "In progress" while running.
+ * A day's workout at a glance: its sets as they stand on the day and how long they'll
+ * take ("4 × 6 reps · ~8 min"). A stopwatch shows its time once it has some
+ * ("1 h 25 min"), or "In progress" while running.
  */
-export function sessionProgress(s: Session) {
+export function sessionSummary(s: Session) {
   if (isStopwatch(s)) {
     if (s.runningSince) return "In progress";
     const seconds = stopwatchSet(s)?.actual.seconds;
-    return seconds ? formatDuration(seconds) : undefined;
+    return seconds ? formatDuration(seconds) : "Open-ended";
   }
-  const sets = s.exercises.flatMap((e) => e.sets);
-  if (sets.length === 0) return undefined;
-  return `${sets.filter((set) => set.done).length}/${sets.length} sets`;
+  const exercise = s.exercises[0];
+  return exercise && formatSummary(planOf(exercise));
+}
+
+/**
+ * "~45 min total" for a day's workouts: the estimates on their rows added up, so the sum
+ * matches what's shown. Stopwatch sessions are open-ended and add nothing. Undefined
+ * when nothing on the day can be timed.
+ */
+export function formatDayTotal(sessions: Session[]) {
+  const minutes = sum(sessions.map((s) => (s.exercises[0] ? estimatedMinutes(planOf(s.exercises[0])) : 0)));
+  return minutes > 0 ? `~${formatDuration(minutes * 60)} total` : undefined;
 }

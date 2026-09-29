@@ -55,7 +55,9 @@ export function WorkoutRow({ title, subtitle, icon, done = false, onToggle, acce
           <AppText variant="row" numberOfLines={1}>
             {title}
           </AppText>
-          <AppText variant="note" color={colors.placeholder} numberOfLines={1}>
+          {/* Never cut off: a long one ("4 × 10 reps / side · ~10 min" on a small phone) takes a
+              second line, which the row has room for. */}
+          <AppText variant="note" color={colors.placeholder} numberOfLines={2}>
             {subtitle ?? " "}
           </AppText>
         </View>
