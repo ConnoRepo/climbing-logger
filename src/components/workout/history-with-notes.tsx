@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View } from "react-native";
 
 import { space } from "@/constants/theme";
-import { MEASURES } from "@/data/categories";
+import { MEASURES } from "@/data/measures";
 import type { Measure } from "@/data/types";
 import type { DateKey } from "@/lib/dates";
 import { useLog } from "@/store/log";

@@ -2,7 +2,7 @@ import { View, type StyleProp, type ViewStyle } from "react-native";
 
 import { AppText, Checkbox, STEPPER_HEIGHT } from "@/components/ui";
 import { colors, space } from "@/constants/theme";
-import { fieldLabel, type FieldSpec } from "@/data/categories";
+import { fieldLabel, type FieldSpec } from "@/data/measures";
 import type { SetValues } from "@/data/types";
 
 import { columnKey, isCompact, SetSteppers, stepperColumn } from "./set-steppers";
@@ -46,7 +46,7 @@ type SetRowProps = {
   values: SetValues;
   done?: boolean;
   fields: FieldSpec[];
-  onChange: (actual: SetValues) => void;
+  onChange: (values: SetValues) => void;
   /** Shows a done checkbox at the end of the row. */
   onToggleDone?: (done: boolean) => void;
   /** The set being done right now: drawn larger. */

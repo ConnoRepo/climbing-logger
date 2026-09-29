@@ -38,7 +38,6 @@ export const type = {
   clock: { fontFamily: fonts.semiBold, fontSize: 112, lineHeight: 134 }, // timer countdown
   display: { fontFamily: fonts.semiBold, fontSize: 64, lineHeight: 77 }, // TIMER, Set 1
   title: { fontFamily: fonts.semiBold, fontSize: 48, lineHeight: 58 }, // Journal
-  subDisplay: { fontFamily: fonts.semiBold, fontSize: 40, lineHeight: 48 }, // Rest
   header: { fontFamily: fonts.semiBold, fontSize: 36, lineHeight: 43 }, // Monday, 2nd
   heading: { fontFamily: fonts.semiBold, fontSize: 30, lineHeight: 36 }, // One Arm Pull Ups
   row: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 29 }, // Mobility
@@ -66,7 +65,6 @@ export const space = {
 } as const;
 
 export const radii = {
-  none: 0,
   pill: 8,
   sheet: 55, // top corners of bottom sheets
 } as const;

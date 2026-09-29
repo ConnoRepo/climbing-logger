@@ -24,7 +24,7 @@ type WorkoutRowProps = {
 };
 
 /** Every row is the same size: fixed height, one-line title, subtitle line always reserved. */
-export const WORKOUT_ROW_HEIGHT = 78;
+const WORKOUT_ROW_HEIGHT = 78;
 
 /** Side padding of lists of workout rows, so every list (and anything drawn over one) lines up. */
 export const LIST_SIDE = 27.5;

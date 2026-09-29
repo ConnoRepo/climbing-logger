@@ -10,7 +10,7 @@ export function toKey(date: Date): DateKey {
   return `${date.getFullYear()}-${m}-${d}`;
 }
 
-export function fromKey(key: DateKey): Date {
+function fromKey(key: DateKey): Date {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(y, m - 1, d);
 }

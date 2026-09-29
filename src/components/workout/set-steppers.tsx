@@ -1,11 +1,11 @@
 import { View } from "react-native";
 
 import { Stepper } from "@/components/ui";
-import type { FieldSpec } from "@/data/categories";
+import type { FieldSpec } from "@/data/measures";
 import type { SetValues } from "@/data/types";
 
 /** Fits a large stepper, so growing one never moves the columns. */
-export const STEPPER_COL = 112;
+const STEPPER_COL = 112;
 
 /** Two steppers fit a row at full size; three (weight, time and reps) are compact and share it. */
 export function isCompact(fields: FieldSpec[]) {
@@ -31,7 +31,7 @@ type SetSteppersProps = {
   position: number;
   values: SetValues;
   fields: FieldSpec[];
-  onChange: (actual: SetValues) => void;
+  onChange: (values: SetValues) => void;
   size?: "regular" | "large";
 };
 
@@ -41,7 +41,7 @@ export function SetSteppers({ position, values, fields, onChange, size }: SetSte
     <View key={columnKey(fields, f)} style={[stepperColumn(fields), { alignItems: "center" }]}>
       <Stepper
         label={`Set ${position + 1} ${f.unit}`}
-        value={values[f.key as keyof SetValues]}
+        value={values[f.key]}
         step={f.step}
         min={f.key === "weightLb" ? f.min : 0}
         size={isCompact(fields) ? "compact" : size}

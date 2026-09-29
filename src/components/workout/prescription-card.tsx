@@ -2,13 +2,13 @@ import { View } from "react-native";
 
 import { AppText, Box, Checkbox, Pills, Stepper, TextField } from "@/components/ui";
 import { colors, space, type } from "@/constants/theme";
-import { MEASURES, carriedForward, fieldLabel, plannedSets } from "@/data/categories";
 import { formatPrescription } from "@/data/format";
+import { MEASURES, fieldLabel, updateSetAt } from "@/data/measures";
 import type { Measure, Prescription, SetValues } from "@/data/types";
 
 import { SetList } from "./set-list";
 
-type ExerciseCardProps = {
+type PrescriptionCardProps = {
   prescription: Prescription;
   /** The measures this workout's category allows; pills are hidden if there's only one. */
   measures: Measure[];
@@ -16,32 +16,14 @@ type ExerciseCardProps = {
 };
 
 /**
- * The plan for a workout's exercise, laid out like the day view's set card:
- * a row per set, then the settings shared by every set. Rest is edited
- * outside the card (see RestBox). Reps and Time are the same size, so
- * switching between them moves nothing.
+ * A workout's plan, laid out like the day view's set card: the settings shared by
+ * every set, then a row per set. Rest is edited outside the card (see RestBox).
+ * Reps and Time are the same size, so switching between them moves nothing.
  */
-export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCardProps) {
+export function PrescriptionCard({ prescription: p, measures, onChange }: PrescriptionCardProps) {
   const spec = MEASURES[p.measure];
   const options = measures.map((m) => ({ value: m, label: MEASURES[m].label }));
-  // Fields shared by every set (hang on/off, edge…): not per set, and not rest.
-  const shared = spec.fields.filter((f) => f.key !== "restSeconds" && !spec.setFields.some((s) => s.key === f.key));
-  const sets = plannedSets(p);
-
-  // The flat fields follow set 1, for anything that reads the plan without per-set values.
-  const setSets = (next: SetValues[]) => onChange({ sets: next.length, setValues: next, ...next[0] });
-
-  function updateSet(index: number, values: SetValues) {
-    // As on a day: new reps, time or weight carry forward to every later set.
-    const carried = carriedForward(values);
-    setSets(
-      sets.map((set, i) => {
-        if (i === index) return { ...set, ...values };
-        if (carried && i > index) return { ...set, ...carried };
-        return set;
-      }),
-    );
-  }
+  const setSets = (sets: SetValues[]) => onChange({ sets });
 
   return (
     <Box style={{ padding: space.sm, gap: space.sm }}>
@@ -54,9 +36,9 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
 
       {options.length > 1 && <Pills options={options} selected={p.measure} onSelect={(measure) => onChange({ measure })} />}
 
-      {shared.length > 0 && (
+      {spec.sharedFields.length > 0 && (
         <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", columnGap: space.md, rowGap: space.sm }}>
-          {shared.map((f) => (
+          {spec.sharedFields.map((f) => (
             <Field
               key={f.key}
               label={fieldLabel(f)}
@@ -72,11 +54,12 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
       {/* A stopwatch has nothing to plan: it just counts up. */}
       {spec.kind === "sets" && (
         <SetList
-          sets={sets.map((values, i) => ({ key: String(i), values }))}
+          sets={p.sets.map((values, i) => ({ key: String(i), values }))}
           fields={spec.setFields}
-          onChange={updateSet}
-          onAdd={() => setSets([...sets, { ...sets.at(-1) }])}
-          onRemove={() => setSets(sets.slice(0, -1))}
+          // As on a day: new reps, time or weight carry forward to every later set.
+          onChange={(index, values) => setSets(updateSetAt(p.sets, index, values))}
+          onAdd={() => setSets([...p.sets, { ...p.sets.at(-1) }])}
+          onRemove={() => setSets(p.sets.slice(0, -1))}
         />
       )}
 
@@ -89,7 +72,7 @@ export function ExerciseCard({ prescription: p, measures, onChange }: ExerciseCa
         />
       )}
 
-      {(p.measure === "reps" || p.measure === "time") && (
+      {spec.usesPerSide && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
           <Checkbox checked={!!p.perSide} onChange={(perSide) => onChange({ perSide })} label="Per side" />
           <AppText variant="button">Per side</AppText>

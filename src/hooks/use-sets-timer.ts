@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Vibration } from "react-native";
 
-import { MEASURES } from "@/data/categories";
+import { MEASURES } from "@/data/measures";
 import { buildSteps, prepCaption, stepCaption, stepRows, type TimerStep } from "@/data/timer-steps";
-import type { Session, SessionExercise } from "@/data/types";
+import type { Session } from "@/data/types";
 import { useLog } from "@/store/log";
 import type { WorkoutActivityProps } from "@/widgets/workout-activity";
 
@@ -29,15 +29,15 @@ const PREP_SECONDS = 10;
  * running while a step counts down, and the Live Activity shows the step on the
  * Lock Screen. If iOS suspends the app anyway, it catches up on return.
  */
-export function useWorkoutTimer(session: Session, exercise: SessionExercise) {
+export function useSetsTimer(session: Session) {
   const log = useLog();
-  const steps = buildSteps(exercise);
+  const steps = buildSteps(session);
   const rows = stepRows(steps);
 
   // Tracked by key so edits to the set list don't move us; the index is the
   // fallback when the current step itself disappears (its set was removed).
   const [pos, setPos] = useState(() => {
-    const index = Math.max(0, steps.findIndex((s) => !exercise.sets.find((set) => set.id === s.setId)?.done));
+    const index = Math.max(0, steps.findIndex((s) => !session.sets.find((set) => set.id === s.setId)?.done));
     return { key: steps[index]?.key, index };
   });
   const found = steps.findIndex((s) => s.key === pos.key);
@@ -76,14 +76,19 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise) {
 
   useBackgroundKeepAlive(countdown.isRunning);
 
-  const set = exercise.sets.find((s) => s.id === current?.setId);
+  const set = session.sets.find((s) => s.id === current?.setId);
   const currentMs = current?.seconds !== undefined ? current.seconds * 1000 : undefined;
   const stepMs = preparing ? PREP_SECONDS * 1000 : currentMs;
   const caption =
     current && set
       ? preparing
         ? prepCaption(current)
-        : stepCaption(current, set, MEASURES[exercise.prescription.measure].setFields)
+        : stepCaption(
+            current,
+            set,
+            session.prescription.sets[current.setNumber - 1] ?? {},
+            MEASURES[session.prescription.measure].setFields,
+          )
       : undefined;
   let activity: WorkoutActivityProps | undefined;
   if (caption !== undefined && !finished) {
@@ -123,7 +128,7 @@ export function useWorkoutTimer(session: Session, exercise: SessionExercise) {
       if (!step) return;
       const following = steps[i + 1];
       const setEnds = step.kind === "work" && !(following?.kind === "work" && following.setId === step.setId);
-      if (setEnds) log.updateSet(session.id, exercise.id, step.setId, { done: true });
+      if (setEnds) log.updateSet(session.id, step.setId, { done: true });
 
       if (!following) {
         countdown.restart(0);

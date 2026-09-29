@@ -8,7 +8,6 @@ type PillsProps<T extends string> = {
   options: readonly { value: T; label: string }[];
   selected: T | undefined;
   onSelect?: (value: T) => void;
-  justify?: "center" | "flex-start";
   wrap?: boolean;
   /** Thin-outlined boxes sharing one row equally, the active one filled (the add-workout type filter). */
   boxed?: boolean;
@@ -19,13 +18,12 @@ export function Pills<T extends string>({
   options,
   selected,
   onSelect,
-  justify = "center",
   wrap = true,
   boxed = false,
 }: PillsProps<T>) {
   return (
     <View
-      style={{ flexDirection: "row", flexWrap: wrap && !boxed ? "wrap" : "nowrap", justifyContent: justify, gap: space.xs }}
+      style={{ flexDirection: "row", flexWrap: wrap && !boxed ? "wrap" : "nowrap", justifyContent: "center", gap: space.xs }}
     >
       {options.map((o) => {
         const active = o.value === selected;

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { View } from "react-native";
 
+import { LIST_SIDE } from "./workout-row";
+
 const BUTTON_HEIGHT = 33;
 const PAD_Y = 7;
 
@@ -16,8 +18,8 @@ export function FloatingBar({ children }: { children: ReactNode }) {
     <View
       style={{
         position: "absolute",
-        left: 27,
-        right: 27,
+        left: LIST_SIDE,
+        right: LIST_SIDE,
         bottom: 0,
         paddingVertical: PAD_Y,
         flexDirection: "row",

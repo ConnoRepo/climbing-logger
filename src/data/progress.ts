@@ -10,7 +10,7 @@ function doneSetsByDay(sessions: Session[], templateId: string) {
   const days: { date: DateKey; sets: SetLog[] }[] = [];
   for (const s of sessions) {
     if (s.templateId !== templateId || s.date === null) continue;
-    const done = s.exercises.flatMap((e) => e.sets).filter((set) => set.done);
+    const done = s.sets.filter((set) => set.done);
     if (done.length > 0) days.push({ date: s.date, sets: done });
   }
   return days;
@@ -28,7 +28,7 @@ function toPoints(byDate: Map<DateKey, number>): HistoryPoint[] {
 export function weightHistory(sessions: Session[], templateId: string): HistoryPoint[] {
   const byDate = new Map<DateKey, number>();
   for (const { date, sets } of doneSetsByDay(sessions, templateId)) {
-    const heaviest = Math.max(...sets.map((set) => set.actual.weightLb ?? 0));
+    const heaviest = Math.max(...sets.map((set) => set.weightLb ?? 0));
     byDate.set(date, Math.max(heaviest, byDate.get(date) ?? -Infinity));
   }
   return toPoints(byDate);
@@ -38,7 +38,7 @@ export function weightHistory(sessions: Session[], templateId: string): HistoryP
 export function durationHistory(sessions: Session[], templateId: string): HistoryPoint[] {
   const byDate = new Map<DateKey, number>();
   for (const { date, sets } of doneSetsByDay(sessions, templateId)) {
-    const minutes = sets.reduce((sum, set) => sum + (set.actual.seconds ?? 0), 0) / 60;
+    const minutes = sets.reduce((sum, set) => sum + (set.seconds ?? 0), 0) / 60;
     if (minutes > 0) byDate.set(date, (byDate.get(date) ?? 0) + minutes);
   }
   return toPoints(byDate);
@@ -59,7 +59,7 @@ export function notesHistory(sessions: Session[], templateId: string): NotesEntr
     .filter((s) => s.templateId === templateId)
     .sort((a, b) => (b.completedAt ?? b.updatedAt).localeCompare(a.completedAt ?? a.updatedAt))
     .flatMap((s) => {
-      const notes = s.notes?.trim();
+      const notes = s.notes.trim();
       return notes ? [{ id: s.id, date: s.date, notes }] : [];
     });
 }

@@ -46,7 +46,7 @@ function withTicks(top: number, bottom: number, steps: number[]): Axis {
 }
 
 /** What a graph plots: its axis, how its values read, and what to say when there are none. */
-export type GraphScale = {
+type GraphScale = {
   axis: (values: number[]) => Axis;
   tickLabel: (value: number) => string;
   valueLabel: (value: number) => string;

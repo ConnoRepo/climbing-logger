@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { formatElapsed } from "@/data/format";
-import { KIND_LABEL } from "@/data/kinds";
-import { stopwatchSet } from "@/data/stopwatch";
+import { KIND_LABEL, stopwatchSet } from "@/data/sessions";
 import { useLiveActivity } from "@/hooks/use-live-activity";
 import { useStopwatch } from "@/hooks/use-stopwatch";
 import { useLog } from "@/store/log";
@@ -14,7 +13,7 @@ import { TimerLayout, type TimerProps } from "./timer-layout";
  * An open-ended session: one clock counting up. Finish logs its time and goes to the
  * review, where the time can be fixed and notes written, like any other workout.
  */
-export function StopwatchTimer({ session, exercise }: TimerProps) {
+export function StopwatchTimer({ session }: TimerProps) {
   const log = useLog();
   const { running, elapsedMs } = useStopwatch(session);
   const [finished, setFinished] = useState(false);
@@ -26,7 +25,7 @@ export function StopwatchTimer({ session, exercise }: TimerProps) {
 
   // iOS runs the Lock Screen clock itself, so it only hears about starts and pauses:
   // running, it counts from when the clock would have read 0:00. Finished, it goes away.
-  const counted = (stopwatchSet(session)?.actual.seconds ?? 0) * 1000;
+  const counted = (stopwatchSet(session)?.seconds ?? 0) * 1000;
   const clock = session.runningSince
     ? { countUpFrom: Date.parse(session.runningSince) - counted }
     : { pausedElapsedMs: counted };
@@ -42,7 +41,7 @@ export function StopwatchTimer({ session, exercise }: TimerProps) {
       finished={finished}
       panel={{ fill: running ? "go" : "fillDark", clock: formatElapsed(elapsedMs), caption: running ? "Running" : "Paused" }}
       // Nothing under the clock while it runs; once finished, the logged time, to fix if need be.
-      body={finished ? <SessionLog session={session} exercise={exercise} /> : null}
+      body={finished ? <SessionLog session={session} /> : null}
       controls={[
         {
           label: running ? "Pause" : "Resume",

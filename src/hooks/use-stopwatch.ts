@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { elapsedMs } from "@/data/stopwatch";
+import { elapsedMs } from "@/data/sessions";
 import type { Session } from "@/data/types";
 
 const TICK_MS = 250;

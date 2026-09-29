@@ -2,8 +2,7 @@ import { router } from "expo-router";
 import { View } from "react-native";
 import { GestureDetector, type GestureType } from "react-native-gesture-handler";
 
-import { WorkoutRow } from "@/components/ui";
-import { categoryInfo } from "@/data/categories";
+import { CATEGORY_ICONS, WorkoutRow } from "@/components/ui";
 import { sessionSummary } from "@/data/format";
 import type { Session } from "@/data/types";
 import { useLog } from "@/store/log";
@@ -18,7 +17,7 @@ type DraggableSessionProps = {
 
 /** A workout row in the week view: open, tick off, swipe to delete, or hold to drag. */
 export function DraggableSession({ session, gesture, lifted }: DraggableSessionProps) {
-  const { setSessionDone, removeSession } = useLog();
+  const { setSessionDone, deleteSession } = useLog();
 
   return (
     <GestureDetector gesture={gesture}>
@@ -26,7 +25,7 @@ export function DraggableSession({ session, gesture, lifted }: DraggableSessionP
         <SessionRow
           session={session}
           onToggle={(done) => setSessionDone(session.id, done)}
-          onRemove={() => removeSession(session.id)}
+          onRemove={() => deleteSession(session.id)}
         />
       </View>
     </GestureDetector>
@@ -47,8 +46,8 @@ export function SessionRow({
     <WorkoutRow
       title={session.name}
       subtitle={sessionSummary(session)}
-      icon={categoryInfo(session.category).icon}
-      done={session.status === "done"}
+      icon={CATEGORY_ICONS[session.category]}
+      done={!!session.completedAt}
       onToggle={onToggle}
       onOpen={() => router.push({ pathname: "/session/[id]", params: { id: session.id } })}
       onRemove={onRemove}

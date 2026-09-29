@@ -3,7 +3,7 @@ import { ScrollView, View, type StyleProp, type ViewStyle } from "react-native";
 
 import { Button } from "@/components/ui";
 import { space } from "@/constants/theme";
-import { MAX_SETS, type FieldSpec } from "@/data/categories";
+import { MAX_SETS, type FieldSpec } from "@/data/measures";
 import type { SetValues } from "@/data/types";
 
 import { SET_ROW_HEIGHT, SetHeader, SetRow } from "./set-row";

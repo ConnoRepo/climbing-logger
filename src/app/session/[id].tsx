@@ -6,11 +6,11 @@ import { AppText, Button, Pager } from "@/components/ui";
 import { HistoryWithNotes } from "@/components/workout/history-with-notes";
 import { SessionLog } from "@/components/workout/session-log";
 import { borders, colors, space, type } from "@/constants/theme";
-import { isStarted, KIND_LABEL, sessionKind } from "@/data/kinds";
+import { isStarted, KIND_LABEL, sessionKind } from "@/data/sessions";
 import { formatShortDate } from "@/lib/dates";
 import { useLog } from "@/store/log";
 
-/** The Start button's height: its area along the bottom is about half the quarter-screen it used to take. */
+/** The Start button's height: compact, so the log and history above get the room. */
 const START_HEIGHT = 60;
 
 /**
@@ -32,10 +32,6 @@ export default function SessionScreen() {
     );
   }
 
-  // Every workout is one exercise (see migrate v2), which is what the timer runs.
-  const exercise = session.exercises[0];
-  const sessionLog = exercise && <SessionLog session={session} exercise={exercise} />;
-
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       <Stack.Screen options={{ title: session.date ? formatShortDate(session.date) : "Unscheduled" }} />
@@ -49,23 +45,20 @@ export default function SessionScreen() {
         keyboardShouldPersistTaps="handled"
         automaticallyAdjustKeyboardInsets
       >
-        {/* Keeps the room the old "Edit saved workout" line took, so the card sits where it did. */}
+        {/* A note line's worth of room under the name, before the card. */}
         <AppText variant="header" align="center" style={{ marginBottom: type.note.lineHeight }}>
           {session.name}
         </AppText>
 
         {/* Swipe left from the log to the workout's graph over time and its past notes; the dots
             sit under the whole log. The pages reach into the screen padding so the graph's axis
-            marks can sit there, leaving its plot about as wide as the log. With no workout
-            behind it there's no history, so just the log. */}
-        {exercise && session.templateId ? (
-          <Pager labels={[KIND_LABEL[sessionKind(session)], "history"]} bleed={space.md} grow>
-            <View style={{ flexGrow: 1, paddingHorizontal: space.md, gap: space.md }}>{sessionLog}</View>
-            <HistoryWithNotes templateId={session.templateId} measure={exercise.prescription.measure} />
-          </Pager>
-        ) : (
-          <View style={{ gap: space.md }}>{sessionLog}</View>
-        )}
+            marks can sit there, leaving its plot about as wide as the log. */}
+        <Pager labels={[KIND_LABEL[sessionKind(session)], "history"]} bleed={space.md} grow>
+          <View style={{ flexGrow: 1, paddingHorizontal: space.md, gap: space.md }}>
+            <SessionLog session={session} />
+          </View>
+          <HistoryWithNotes templateId={session.templateId} measure={session.prescription.measure} />
+        </Pager>
       </ScrollView>
 
       {/* Kept compact along the bottom, so the log and history above get the room. */}

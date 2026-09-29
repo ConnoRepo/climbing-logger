@@ -1,10 +1,8 @@
-import { restsBetweenReps } from "./categories";
-import { isStopwatch } from "./kinds";
-import { planOf } from "./schedule";
-import { stopwatchSet } from "./stopwatch";
+import { restsBetweenReps } from "./measures";
+import { isStopwatch, planOf, stopwatchSet } from "./sessions";
 import type { Prescription, Session, SetValues } from "./types";
 
-export function formatSeconds(total: number) {
+function formatSeconds(total: number) {
   if (total < 60) return `${total}s`;
   const m = Math.floor(total / 60);
   const s = total % 60;
@@ -44,7 +42,7 @@ export function formatWeight(lb: number) {
 
 /** A field's planned value for each set. */
 function perSet(p: Prescription, key: keyof SetValues) {
-  return Array.from({ length: p.sets }, (_, i) => p.setValues?.[i]?.[key] ?? p[key] ?? 0);
+  return p.sets.map((set) => set[key] ?? 0);
 }
 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
@@ -59,8 +57,8 @@ const timedSet = (reps: number, on: number, off: number) => reps * on + Math.max
  * Roughly how long a workout takes, in seconds: the rests between sets, plus the sets
  * themselves (their full time when timed, a flat 20s each when counted in reps or problems).
  */
-export function estimatedSeconds(p: Prescription) {
-  const rests = Math.max(0, p.sets - 1) * (p.restSeconds ?? 0);
+function estimatedSeconds(p: Prescription): number {
+  const rests = Math.max(0, p.sets.length - 1) * (p.restSeconds ?? 0);
   const off = p.offSeconds ?? 0;
   switch (p.measure) {
     case "time": {
@@ -68,12 +66,14 @@ export function estimatedSeconds(p: Prescription) {
       return rests + sum(perSet(p, "seconds").map((on, i) => timedSet(reps[i], on, off)));
     }
     case "intervals":
-      return rests + sum(perSet(p, "reps").map((hangs) => timedSet(hangs, p.seconds ?? 0, off)));
+      return rests + sum(perSet(p, "reps").map((hangs) => timedSet(hangs, p.onSeconds ?? 0, off)));
     case "reps":
     case "climbs":
-      return rests + p.sets * SECONDS_PER_UNTIMED_SET;
+      return rests + p.sets.length * SECONDS_PER_UNTIMED_SET;
     case "stopwatch":
       return 0;
+    default:
+      return p.measure satisfies never;
   }
 }
 
@@ -110,26 +110,28 @@ export function formatPrescription(p: Prescription) {
 
   switch (p.measure) {
     case "reps":
-      parts.push(`${p.sets} × ${joined(perSet(p, "reps"))} reps${side}`);
+      parts.push(`${p.sets.length} × ${joined(perSet(p, "reps"))} reps${side}`);
       break;
     case "time": {
       const holds = joined(perSet(p, "seconds"), formatSeconds);
       if (restsBetweenReps(p)) {
         const off = formatSeconds(p.offSeconds ?? 0);
-        parts.push(`${p.sets} sets`, `${joined(perSet(p, "reps"))} × ${holds} on / ${off} off${side}`);
+        parts.push(`${p.sets.length} sets`, `${joined(perSet(p, "reps"))} × ${holds} on / ${off} off${side}`);
       } else {
-        parts.push(`${p.sets} × ${holds}${side}`);
+        parts.push(`${p.sets.length} × ${holds}${side}`);
       }
       break;
     }
     case "intervals":
-      parts.push(`${p.sets} sets`, `${joined(perSet(p, "reps"))} × ${p.seconds ?? 0}s on / ${p.offSeconds ?? 0}s off`);
+      parts.push(`${p.sets.length} sets`, `${joined(perSet(p, "reps"))} × ${p.onSeconds ?? 0}s on / ${p.offSeconds ?? 0}s off`);
       if (p.edgeMm) parts.push(`${p.edgeMm} mm`);
       break;
     case "climbs":
-      parts.push(`${p.sets} × ${joined(perSet(p, "reps"))} problems`);
+      parts.push(`${p.sets.length} × ${joined(perSet(p, "reps"))} problems`);
       if (p.grade) parts.push(p.grade);
       break;
+    default:
+      p.measure satisfies never;
   }
   const weights = perSet(p, "weightLb");
   if (weights.some((w) => w !== 0)) parts.push(`${joined(weights, signed)} lb`);
@@ -156,7 +158,7 @@ export function formatSummary(p: Prescription) {
     each = `${joined(perSet(p, "reps"))} ${COUNTED_IN[p.measure]}`;
   }
   const estimate = formatEstimate(p);
-  return [`${p.sets} × ${each}${side}`, ...(estimate ? [estimate] : [])].join(" · ");
+  return [`${p.sets.length} × ${each}${side}`, ...(estimate ? [estimate] : [])].join(" · ");
 }
 
 /**
@@ -167,11 +169,10 @@ export function formatSummary(p: Prescription) {
 export function sessionSummary(s: Session) {
   if (isStopwatch(s)) {
     if (s.runningSince) return "In progress";
-    const seconds = stopwatchSet(s)?.actual.seconds;
+    const seconds = stopwatchSet(s)?.seconds;
     return seconds ? formatDuration(seconds) : "Open-ended";
   }
-  const exercise = s.exercises[0];
-  return exercise && formatSummary(planOf(exercise));
+  return formatSummary(planOf(s));
 }
 
 /**
@@ -180,6 +181,6 @@ export function sessionSummary(s: Session) {
  * when nothing on the day can be timed.
  */
 export function formatDayTotal(sessions: Session[]) {
-  const minutes = sum(sessions.map((s) => (s.exercises[0] ? estimatedMinutes(planOf(s.exercises[0])) : 0)));
+  const minutes = sum(sessions.map((s) => estimatedMinutes(planOf(s))));
   return minutes > 0 ? `~${formatDuration(minutes * 60)} total` : undefined;
 }

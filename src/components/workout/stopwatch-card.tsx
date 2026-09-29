@@ -23,7 +23,7 @@ export function StopwatchCard({ session, onChangeSeconds }: StopwatchCardProps) 
   return (
     <Box style={{ flexGrow: 1, justifyContent: "center", padding: space.sm, gap: space.sm, alignItems: "center" }}>
       <AppText variant="note" color={colors.placeholder} align="center">
-        {running ? "Running" : session.status === "done" ? "Logged" : "Counts up until you finish"}
+        {running ? "Running" : session.completedAt ? "Logged" : "Counts up until you finish"}
       </AppText>
       <AppText variant="display" style={{ fontVariant: ["tabular-nums"] }}>
         {formatElapsed(elapsedMs)}

@@ -1,13 +1,12 @@
 export { Box } from "./box";
 export { Button } from "./button";
 export { Checkbox } from "./checkbox";
-export { DAYS, DayPills } from "./day-pills";
+export { DayPills } from "./day-pills";
 export { FLOATING_BAR_HEIGHT, FloatingBar } from "./floating-bar";
-export { Icon, type IconName } from "./icon";
+export { CATEGORY_ICONS, Icon, type IconName } from "./icon";
 export { NotebookInput } from "./notebook-input";
 export { Pager } from "./pager";
 export { Pills } from "./pills";
-export { Sheet } from "./sheet";
 export { Stepper, STEPPER_HEIGHT } from "./stepper";
 export { SwipeToDelete } from "./swipe-to-delete";
 export { AppText } from "./text";

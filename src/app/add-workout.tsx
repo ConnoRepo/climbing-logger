@@ -4,24 +4,17 @@ import { FlatList, Keyboard, Pressable, StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppText, Box, Button, Icon, LIST_SIDE, Pills, TextField, WorkoutRow } from "@/components/ui";
+import { AppText, Box, Button, CATEGORY_ICONS, Icon, LIST_SIDE, Pills, TextField, WorkoutRow } from "@/components/ui";
 import { SquareButton } from "@/components/workout/sheet-parts";
 import { borders, colors, space } from "@/constants/theme";
 import { CATEGORIES, categoryInfo } from "@/data/categories";
 import { formatSummary } from "@/data/format";
-import { searchTemplates } from "@/data/search";
-import { templateExercise } from "@/data/templates";
+import { searchTemplates } from "@/data/templates";
 import type { Category, WorkoutTemplate } from "@/data/types";
 import { formatDayHeader } from "@/lib/dates";
 import { useLog } from "@/store/log";
 
 const TYPES = CATEGORIES.map((c) => ({ value: c.id, label: c.label }));
-
-/** Sets, reps and length, so the whole thing fits on the row's one subtitle line. */
-function summary(t: WorkoutTemplate) {
-  const exercise = templateExercise(t);
-  return exercise ? formatSummary(exercise) : "";
-}
 
 /** Space between rows, as on the home screen. */
 function RowGap() {
@@ -67,7 +60,7 @@ function NewMenu({ top, onPick, onClose }: { top: number; onPick: (category: Cat
                 backgroundColor: pressed ? colors.fill : colors.paper,
               })}
             >
-              <Icon name={c.icon} size={32} />
+              <Icon name={CATEGORY_ICONS[c.id]} size={32} />
               <AppText variant="label">{c.label}</AppText>
             </Pressable>
           ))}
@@ -150,8 +143,8 @@ export default function AddWorkout() {
         renderItem={({ item: t }) => (
           <WorkoutRow
             title={t.name}
-            subtitle={added[t.id] ? `Added to ${date ? formatDayHeader(date) : "Unscheduled"}` : summary(t)}
-            icon={categoryInfo(t.category).icon}
+            subtitle={added[t.id] ? `Added to ${date ? formatDayHeader(date) : "Unscheduled"}` : formatSummary(t.prescription)}
+            icon={CATEGORY_ICONS[t.category]}
             onOpen={() => open(t.id)}
             accessory={<SquareButton label={`Add ${t.name}`} onPress={() => add(t)} />}
           />

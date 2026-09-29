@@ -6,18 +6,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppText, Box, Button, NotebookInput, Pager } from "@/components/ui";
 import { borders, colors, space } from "@/constants/theme";
-import type { Session, SessionExercise } from "@/data/types";
+import type { Session } from "@/data/types";
 import { useKeyboardHeight } from "@/hooks/use-keyboard-height";
 import { useLog } from "@/store/log";
 
-/** What every kind's timer is given: the session, and the one exercise it runs. */
-export type TimerProps = { session: Session; exercise: SessionExercise };
+/** What every kind's timer is given: the session it runs. */
+export type TimerProps = { session: Session };
 
 /** What the big clock at the top shows. */
-export type ClockPanelProps = { fill: keyof typeof colors; clock: string; caption?: string };
+type ClockPanelProps = { fill: keyof typeof colors; clock: string; caption?: string };
 
 /** A button in the row along the bottom. */
-export type TimerControl = { label: string; onPress: () => void; disabled?: boolean };
+type TimerControl = { label: string; onPress: () => void; disabled?: boolean };
 
 type TimerLayoutProps = {
   session: Session;
@@ -84,7 +84,7 @@ export function TimerLayout({ session, logLabel, panel, body, controls, finished
         <Pager labels={[logLabel, "notes"]} fill startPage={1}>
           {body}
           <NotebookInput
-            value={session.notes ?? ""}
+            value={session.notes}
             onChangeText={(notes) => log.setSessionNotes(session.id, notes)}
             placeholder="How did it go? Notes for next time..."
             style={{ flex: 1, minHeight: 0 }}

@@ -1,13 +1,15 @@
 /**
- * Workout data model. Shaped to map 1:1 onto future backend tables:
- * every record has a UUID and timestamps, and nested lists carry their own
- * `id` + `position` so they can be flattened into child tables.
+ * Workout data model. Each collection in AppData is one future backend table, and a
+ * row's `prescription` and `sets` are JSON columns, always read and written with it.
+ *
+ * Row fields that can be absent are `T | null` (as a backend returns them); text is ""
+ * when empty, never null. Fields inside the JSON columns are optional.
  */
 import type { DateKey } from "@/lib/dates";
 
 export type Category = "climbing" | "fingers" | "workout" | "mobility";
 
-/** How one set of an exercise is measured. */
+/** How one set of a workout is measured. */
 export type Measure = "reps" | "time" | "intervals" | "climbs" | "stopwatch";
 
 /**
@@ -22,100 +24,76 @@ export type HistoryKind = "weight" | "duration";
 
 type Timestamps = { createdAt: string; updatedAt: string };
 
-/** Canonical exercise, so history can follow "Pull Ups" across templates. */
-export type Exercise = Timestamps & {
-  id: string;
-  name: string;
-  category: Category;
-  defaultMeasure: Measure;
+/** The numbers that can differ from set to set, planned or logged. */
+export type SetValues = {
+  /** reps · intervals: hangs · climbs: problems · time: holds in the set */
+  reps?: number;
+  /** time: each hold · stopwatch: the time logged */
+  seconds?: number;
+  /** + added / – assisted */
+  weightLb?: number;
 };
 
 /**
- * One line of a template: "Pull Ups — 4 × 6 reps @ +25 lb, 2:00 rest".
- * Fields are flat and optional; `measure` decides which ones apply (see MEASURES).
+ * How a workout is done: "4 × 6 reps @ +25 lb, 2:00 rest". `sets` holds each set's
+ * planned values (and so how many there are); the other fields apply to every set.
+ * `measure` decides which fields apply (see MEASURES).
  */
 export type Prescription = {
-  id: string;
-  position: number;
-  /** Library exercise this line tracks; null until it has been named. */
-  exerciseId: string | null;
-  name: string;
   measure: Measure;
-  sets: number;
-  /** Each set's own planned values, when they differ (8, 6, 4 reps). Unset fields use the flat ones below. */
-  setValues?: SetValues[];
-  /** reps · intervals: reps per set · climbs: problems per set */
-  reps?: number;
-  /** time: hold/duration · intervals: seconds on */
-  seconds?: number;
-  /** intervals: seconds off (repeaters 7 on / 3 off) */
+  sets: SetValues[];
+  /** intervals: time on for each hang */
+  onSeconds?: number;
+  /** intervals: time off between hangs · time: rest between the holds of a set */
   offSeconds?: number;
   perSide?: boolean;
-  /** + added / – assisted */
-  weightLb?: number;
   edgeMm?: number;
-  /** Stored as entered ("V4", "V2–V4") — never converted between scales. */
+  /** Stored as entered ("V4", "V2–V4"), never converted between scales. */
   grade?: string;
   /** Rest between sets. */
   restSeconds?: number;
   notes?: string;
 };
 
+/** A saved workout. Soft-deleted, since its sessions keep pointing at it. */
 export type WorkoutTemplate = Timestamps & {
   id: string;
+  name: string;
   category: Category;
-  name: string;
-  exercises: Prescription[];
-  deletedAt?: string;
-};
-
-/** The per-set numbers that can differ between plan and reality. */
-export type SetValues = {
-  reps?: number;
-  seconds?: number;
-  weightLb?: number;
-};
-
-export type SetLog = {
-  id: string;
-  position: number;
-  planned: SetValues;
-  actual: SetValues;
-  done: boolean;
-};
-
-export type SessionExercise = {
-  id: string;
-  position: number;
-  exerciseId: string | null;
-  name: string;
-  /** Snapshot of the template line at the time it was scheduled. */
   prescription: Prescription;
-  sets: SetLog[];
+  deletedAt: string | null;
 };
+
+/** One set as it was done. */
+export type SetLog = SetValues & { id: string; done: boolean };
 
 /** A template added to a day: a full copy, edited independently from then on. */
 export type Session = Timestamps & {
   id: string;
+  templateId: string;
   /** The day it's on, or null while it's Unscheduled (planned for the week, not on a day yet). */
   date: DateKey | null;
   /** Order among the sessions on the same day (or in Unscheduled); lowest first. */
   position: number;
-  templateId: string | null;
-  category: Category;
+  /** Copied from the template, so a day's row needs nothing else. */
   name: string;
-  status: "planned" | "done";
-  completedAt?: string;
-  /** Stopwatch sessions: when the clock was last started; unset while it's stopped. */
-  runningSince?: string;
+  category: Category;
+  /** The template's prescription when it was added. Only its rest can be changed on the day. */
+  prescription: Prescription;
+  /** Set i was planned as `prescription.sets[i]`; sets are only added or removed at the end. */
+  sets: SetLog[];
+  completedAt: string | null;
+  /** Stopwatch sessions: when the clock was last started; null while it's stopped. */
+  runningSince: string | null;
   /** Written at the end of the workout, for next time. */
-  notes?: string;
-  exercises: SessionExercise[];
+  notes: string;
 };
 
+/** One day's journal; the date is its key. */
+export type JournalEntry = Timestamps & { date: DateKey; text: string };
+
 export type AppData = {
-  exercises: Exercise[];
   templates: WorkoutTemplate[];
   sessions: Session[];
-  journal: Record<DateKey, string>;
+  journal: JournalEntry[];
 };

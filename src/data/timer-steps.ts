@@ -1,6 +1,6 @@
-import type { FieldSpec } from "./categories";
 import { formatWeight } from "./format";
-import type { SessionExercise, SetLog, SetValues } from "./types";
+import type { FieldSpec } from "./measures";
+import type { Session, SetLog, SetValues } from "./types";
 
 /**
  * One thing the workout timer walks through: a set, one rep of a set (a repeater hang), or a rest.
@@ -20,7 +20,7 @@ export type TimerStep = {
 };
 
 /** A line in the timer's Set / Rest list: consecutive steps of the same set and kind. */
-export type StepRow = {
+type StepRow = {
   key: string;
   kind: "work" | "rest";
   setId: string;
@@ -28,11 +28,11 @@ export type StepRow = {
   stepKeys: string[];
 };
 
-export function buildSteps(exercise: SessionExercise): TimerStep[] {
-  const p = exercise.prescription;
+export function buildSteps(session: Session): TimerStep[] {
+  const p = session.prescription;
   const steps: TimerStep[] = [];
 
-  exercise.sets.forEach((set, i) => {
+  session.sets.forEach((set, i) => {
     const base = { kind: "work" as const, setId: set.id, setNumber: i + 1 };
 
     switch (p.measure) {
@@ -42,22 +42,24 @@ export function buildSteps(exercise: SessionExercise): TimerStep[] {
         break;
       case "time": {
         // Follows the set as it's edited, so its time and reps can be changed before starting it.
-        const seconds = set.actual.seconds ?? p.seconds ?? 0;
-        const of = Math.max(1, set.actual.reps ?? p.reps ?? 1);
-        if (of === 1) steps.push({ ...base, key: `work:${set.id}`, seconds });
-        else steps.push(...repSteps(base, "Rep", of, seconds, p.offSeconds));
+        const of = Math.max(1, set.reps ?? 1);
+        if (of === 1) steps.push({ ...base, key: `work:${set.id}`, seconds: set.seconds ?? 0 });
+        else steps.push(...repSteps(base, "Rep", of, set.seconds ?? 0, p.offSeconds));
         break;
       }
       case "intervals":
-        // Timing follows the plan; the logged hang count is edited separately.
-        steps.push(...repSteps(base, "Hang", Math.max(1, set.planned.reps ?? p.reps ?? 1), p.seconds ?? 0, p.offSeconds));
+        // Timing follows the plan; the logged hang count is edited separately. A set added on
+        // the day has no plan, so it times the hangs it was given.
+        steps.push(...repSteps(base, "Hang", Math.max(1, p.sets[i]?.reps ?? set.reps ?? 1), p.onSeconds ?? 0, p.offSeconds));
         break;
       case "stopwatch":
         // Counts up on its own screen instead (see StopwatchTimer).
         break;
+      default:
+        p.measure satisfies never;
     }
 
-    if (i < exercise.sets.length - 1 && p.restSeconds) {
+    if (i < session.sets.length - 1 && p.restSeconds) {
       steps.push({ kind: "rest", key: `rest:${set.id}`, setId: set.id, setNumber: i + 1, seconds: p.restSeconds });
     }
   });
@@ -95,20 +97,19 @@ export function stepRows(steps: TimerStep[]): StepRow[] {
 
 /**
  * Line under the clock: "Set 2 · 6 reps · +25 lb", "Set 1 · +25 lb · Hold", "Set 1 · Hang 3/6 · On",
- * "Rest · Set 3 next".
+ * "Rest · Set 3 next". Shows the set's plan where it has one (`planned`), otherwise what's logged.
  */
-export function stepCaption(step: TimerStep, set: SetLog, fields: FieldSpec[]) {
+export function stepCaption(step: TimerStep, set: SetLog, planned: SetValues, fields: FieldSpec[]) {
   if (step.kind === "rest") return `Rest · Set ${step.setNumber + 1} next`;
   const parts = [`Set ${step.setNumber}`];
   if (step.rep) {
     parts.push(`${step.rep.name} ${step.rep.index}/${step.rep.of}`, step.rep.phase === "on" ? "On" : "Off");
   } else {
-    for (const f of fields) {
-      const key = f.key as keyof SetValues;
-      const v = set.planned[key] ?? set.actual[key];
+    for (const { key, unit } of fields) {
+      const v = planned[key] ?? set[key];
       // A timed set here is a single hold, so its one rep goes unsaid.
       if (!v || (key === "reps" && step.seconds !== undefined)) continue;
-      parts.push(key === "weightLb" ? formatWeight(v) : key === "seconds" ? "Hold" : `${v} ${f.unit}`);
+      parts.push(key === "weightLb" ? formatWeight(v) : key === "seconds" ? "Hold" : `${v} ${unit}`);
     }
   }
   return parts.join(" · ");

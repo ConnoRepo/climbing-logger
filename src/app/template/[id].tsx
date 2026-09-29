@@ -4,13 +4,12 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AppText, Button, TextField } from "@/components/ui";
-import { ExerciseCard } from "@/components/workout/exercise-card";
+import { PrescriptionCard } from "@/components/workout/prescription-card";
 import { RestBox } from "@/components/workout/rest-box";
 import { colors, space } from "@/constants/theme";
-import { MEASURES, categoryInfo, restsBetweenReps } from "@/data/categories";
-import { templateExercise } from "@/data/templates";
-import type { WorkoutTemplate } from "@/data/types";
-import { useCommittedText } from "@/hooks/use-committed-text";
+import { categoryInfo } from "@/data/categories";
+import { MEASURES, restsBetweenReps } from "@/data/measures";
+import type { Prescription, WorkoutTemplate } from "@/data/types";
 import { useLog } from "@/store/log";
 
 /** Edits a saved workout. Days it was already added to keep their own copy. */
@@ -38,13 +37,8 @@ export default function TemplateEditor() {
 function Editor({ template }: { template: WorkoutTemplate }) {
   const log = useLog();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const exercise = templateExercise(template);
-
-  // The name updates live; once typing finishes it also links the exercise to the library.
-  const name = useCommittedText(template.name, {
-    onChange: (value) => log.updateTemplate(template.id, { name: value }),
-    onCommit: (value) => exercise && log.updateTemplateExercise(template.id, exercise.id, { name: value }),
-  });
+  const p = template.prescription;
+  const update = (patch: Partial<Prescription>) => log.updatePrescription(template.id, patch);
 
   return (
     // The field being typed in scrolls up to sit just above the keyboard.
@@ -54,35 +48,26 @@ function Editor({ template }: { template: WorkoutTemplate }) {
       automaticallyAdjustKeyboardInsets
     >
       <View>
-        <TextField variant="header" underline accessibilityLabel="Workout name" {...name} />
+        <TextField
+          variant="header"
+          underline
+          accessibilityLabel="Workout name"
+          value={template.name}
+          onChangeText={(name) => log.renameTemplate(template.id, name)}
+        />
         <AppText variant="note" color={colors.placeholder} style={{ marginTop: 4 }}>
           {categoryInfo(template.category).label}
         </AppText>
       </View>
 
-      {exercise && (
-        <>
-          <ExerciseCard
-            prescription={exercise}
-            measures={categoryInfo(template.category).measures}
-            onChange={(patch) => log.updateTemplateExercise(template.id, exercise.id, patch)}
-          />
-          {/* A stopwatch session has no sets to rest between. */}
-          {MEASURES[exercise.measure].restBetweenSets && (
-            <RestBox
-              value={exercise.restSeconds}
-              onChange={(restSeconds) => log.updateTemplateExercise(template.id, exercise.id, { restSeconds })}
-            />
-          )}
-          {/* Under rest between sets, so turning it on leaves everything above where it was. */}
-          {restsBetweenReps(exercise) && (
-            <RestBox
-              between="reps"
-              value={exercise.offSeconds}
-              onChange={(offSeconds) => log.updateTemplateExercise(template.id, exercise.id, { offSeconds })}
-            />
-          )}
-        </>
+      <PrescriptionCard prescription={p} measures={categoryInfo(template.category).measures} onChange={update} />
+      {/* A stopwatch session has no sets to rest between. */}
+      {MEASURES[p.measure].kind === "sets" && (
+        <RestBox value={p.restSeconds} onChange={(restSeconds) => update({ restSeconds })} />
+      )}
+      {/* Under rest between sets, so turning it on leaves everything above where it was. */}
+      {restsBetweenReps(p) && (
+        <RestBox between="reps" value={p.offSeconds} onChange={(offSeconds) => update({ offSeconds })} />
       )}
 
       <AppText variant="note" color={colors.placeholder} align="center">

@@ -2,15 +2,15 @@ import { createContext, useContext, useEffect, useReducer, useState, type ReactN
 
 import { newId } from "@/data/ids";
 import { FAKE_POINTS, HISTORY, SHOW_FAKE_POINTS, notesHistory, withFakePoints } from "@/data/progress";
-import { sessionsOn } from "@/data/schedule";
 import { seedData } from "@/data/seed";
+import { sessionsOn } from "@/data/sessions";
 import { loadState, saveState } from "@/data/storage";
-import type { AppData, Category, HistoryKind, Prescription, SetValues, WorkoutTemplate } from "@/data/types";
+import type { AppData, Category, HistoryKind, Prescription, SetLog, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
 
-const EMPTY: AppData = { exercises: [], templates: [], sessions: [], journal: {} };
+const EMPTY: AppData = { templates: [], sessions: [], journal: [] };
 const SAVE_DELAY_MS = 400;
 
 function useLogState() {
@@ -47,7 +47,7 @@ function useLogState() {
     /** Every workout that hasn't been deleted. */
     templates,
     template: (id: string): WorkoutTemplate | undefined => templates.find((t) => t.id === id),
-    journalFor: (date: DateKey) => data.journal[date] ?? "",
+    journalFor: (date: DateKey) => data.journal.find((e) => e.date === date)?.text ?? "",
     /** A workout's points over time, for its kind of graph: heaviest weight, or minutes. */
     history: (templateId: string, kind: HistoryKind) => {
       const points = HISTORY[kind](data.sessions, templateId);
@@ -63,11 +63,10 @@ function useLogState() {
       dispatch({ type: "template/create", id, category, name });
       return id;
     },
-    updateTemplate: (id: string, patch: Partial<Pick<WorkoutTemplate, "name" | "category">>) =>
-      dispatch({ type: "template/update", id, patch }),
+    renameTemplate: (id: string, name: string) => dispatch({ type: "template/rename", id, name }),
+    updatePrescription: (id: string, patch: Partial<Prescription>) =>
+      dispatch({ type: "template/updatePrescription", id, patch }),
     deleteTemplate: (id: string) => dispatch({ type: "template/delete", id }),
-    updateTemplateExercise: (templateId: string, exerciseId: string, patch: Partial<Prescription>) =>
-      dispatch({ type: "template/updateExercise", templateId, exerciseId, patch }),
 
     // Sessions
     /** Adds a copy of the template to a day, or to Unscheduled when `date` is null. */
@@ -76,23 +75,22 @@ function useLogState() {
       dispatch({ type: "session/schedule", id, templateId, date });
       return id;
     },
-    removeSession: (id: string) => dispatch({ type: "session/remove", id }),
+    deleteSession: (id: string) => dispatch({ type: "session/delete", id }),
     /** Moves a session to a day (or back to Unscheduled with null), at `index` there or at the end. */
     moveSession: (id: string, date: DateKey | null, index?: number) =>
       dispatch({ type: "session/move", id, date, index }),
     setSessionDone: (id: string, done: boolean) => dispatch({ type: "session/setDone", id, done }),
     setSessionNotes: (id: string, notes: string) => dispatch({ type: "session/setNotes", id, notes }),
-    setRest: (sessionId: string, exerciseId: string, restSeconds: number) =>
-      dispatch({ type: "session/setRest", sessionId, exerciseId, restSeconds }),
-    startStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/start", sessionId }),
-    pauseStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/pause", sessionId }),
+    setSessionRest: (id: string, restSeconds: number) => dispatch({ type: "session/setRest", id, restSeconds }),
+    startStopwatch: (id: string) => dispatch({ type: "stopwatch/start", id }),
+    pauseStopwatch: (id: string) => dispatch({ type: "stopwatch/pause", id }),
     /** Stops the clock and logs its time as the session's. */
-    finishStopwatch: (sessionId: string) => dispatch({ type: "stopwatch/finish", sessionId }),
-    addSet: (sessionId: string, exerciseId: string) => dispatch({ type: "set/add", sessionId, exerciseId }),
-    removeSet: (sessionId: string, exerciseId: string, setId: string) =>
-      dispatch({ type: "set/remove", sessionId, exerciseId, setId }),
-    updateSet: (sessionId: string, exerciseId: string, setId: string, change: { actual?: SetValues; done?: boolean }) =>
-      dispatch({ type: "set/update", sessionId, exerciseId, setId, ...change }),
+    finishStopwatch: (id: string) => dispatch({ type: "stopwatch/finish", id }),
+    addSet: (sessionId: string) => dispatch({ type: "set/add", sessionId }),
+    removeLastSet: (sessionId: string) => dispatch({ type: "set/removeLast", sessionId }),
+    /** New reps, time or weight carry forward to the later sets. */
+    updateSet: (sessionId: string, setId: string, change: Partial<Omit<SetLog, "id">>) =>
+      dispatch({ type: "set/update", sessionId, setId, change }),
 
     // Journal
     setJournal: (date: DateKey, text: string) => dispatch({ type: "journal/set", date, text }),

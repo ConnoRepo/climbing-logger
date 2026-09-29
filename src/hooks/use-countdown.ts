@@ -69,20 +69,13 @@ export function useCountdown(initialSeconds: number, { onDone, onSecond }: Count
     setRun((n) => n + 1);
   }
 
-  function reset() {
-    setIsRunning(false);
-    setRemainingMs(initialSeconds * 1000);
-  }
-
   return {
     remainingMs,
-    seconds: Math.ceil(remainingMs / 1000),
     isRunning,
     /** Wall-clock time the running countdown reaches 0 (ms since epoch). */
     endsAt,
     start,
     pause,
-    reset,
     restart,
   };
 }

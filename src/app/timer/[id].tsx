@@ -6,7 +6,7 @@ import { SetsTimer } from "@/components/workout/sets-timer";
 import { StopwatchTimer } from "@/components/workout/stopwatch-timer";
 import type { TimerProps } from "@/components/workout/timer-layout";
 import { space } from "@/constants/theme";
-import { sessionKind } from "@/data/kinds";
+import { sessionKind } from "@/data/sessions";
 import type { SessionKind } from "@/data/types";
 import { useLog } from "@/store/log";
 
@@ -20,9 +20,8 @@ const TIMERS: Record<SessionKind, ComponentType<TimerProps>> = {
 export default function TimerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const session = useLog().session(id);
-  const exercise = session?.exercises[0];
 
-  if (!session || !exercise) {
+  if (!session) {
     return (
       <AppText variant="label" align="center" style={{ marginTop: space.xl }}>
         This workout was removed.
@@ -30,5 +29,5 @@ export default function TimerScreen() {
     );
   }
   const Timer = TIMERS[sessionKind(session)];
-  return <Timer session={session} exercise={exercise} />;
+  return <Timer session={session} />;
 }
