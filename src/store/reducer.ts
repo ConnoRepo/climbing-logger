@@ -2,13 +2,16 @@ import { categoryInfo, defaultMeasure } from "@/data/categories";
 import { newId, now } from "@/data/ids";
 import { MAX_SETS, MEASURES, updateSetAt } from "@/data/measures";
 import { isStopwatch, newSession, sessionsOn, stopClock, withSet } from "@/data/sessions";
+import { applyRemote, type Changes } from "@/data/sync";
 import { newPrescription, newTemplate } from "@/data/templates";
 import type { AppData, Category, Prescription, Session, SetLog, WorkoutTemplate } from "@/data/types";
 import type { DateKey } from "@/lib/dates";
 import { clamp } from "@/lib/math";
 
-type Action =
+export type Action =
   | { type: "hydrate"; data: AppData }
+  /** Rows pulled from the server, merged into whatever the device has by then. */
+  | { type: "sync/pull"; changes: Changes }
   // Templates
   | { type: "template/create"; id: string; category: Category; name?: string }
   | { type: "template/rename"; id: string; name: string }
@@ -49,6 +52,9 @@ export function reducer(state: AppData, action: Action): AppData {
   switch (action.type) {
     case "hydrate":
       return action.data;
+
+    case "sync/pull":
+      return applyRemote(state, action.changes);
 
     case "template/create": {
       const name = action.name?.trim() || `New ${categoryInfo(action.category).label}`;
