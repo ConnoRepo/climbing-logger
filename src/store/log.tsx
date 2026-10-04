@@ -4,13 +4,11 @@ import { newId } from "@/data/ids";
 import { FAKE_POINTS, HISTORY, SHOW_FAKE_POINTS, notesHistory, withFakePoints } from "@/data/progress";
 import { seedData } from "@/data/seed";
 import { sessionsOn } from "@/data/sessions";
-import { loadState, saveState, saveSyncState } from "@/data/storage";
-import { NEW_SYNC_STATE } from "@/data/sync";
+import { loadState, saveState } from "@/data/storage";
 import type { AppData, Category, HistoryKind, Prescription, SetLog, WorkoutTemplate } from "@/data/types";
 import { toKey, type DateKey } from "@/lib/dates";
 
 import { reducer } from "./reducer";
-import { useSync } from "./sync";
 
 const EMPTY: AppData = { templates: [], sessions: [], journal: [] };
 const SAVE_DELAY_MS = 400;
@@ -21,10 +19,7 @@ function useLogState() {
   const [selectedDate, selectDate] = useState(() => toKey(new Date()));
 
   useEffect(() => {
-    loadState().then(async (saved) => {
-      // Starting from the seed, nothing on this device has synced: a leftover sync state
-      // would read every session it lists as deleted.
-      if (!saved) await saveSyncState(NEW_SYNC_STATE);
+    loadState().then((saved) => {
       dispatch({ type: "hydrate", data: saved ?? seedData() });
       setHydrated(true);
     });
@@ -36,8 +31,6 @@ function useLogState() {
     const id = setTimeout(() => saveState(data), SAVE_DELAY_MS);
     return () => clearTimeout(id);
   }, [data, hydrated]);
-
-  useSync(data, dispatch, hydrated);
 
   const templates = data.templates.filter((t) => !t.deletedAt);
 
